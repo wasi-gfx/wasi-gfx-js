@@ -1,0 +1,2 @@
+webgpu = "https://github.com/WebAssembly/wasi-webgpu/archive/2d44a4c5eb93aba5ed468593410a338390f2469c.tar.gz"
+cli = "https://github.com/WebAssembly/wasi-cli/archive/6ae82617096e83e6606047736e84ac397b788631.tar.gz"

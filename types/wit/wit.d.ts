@@ -1,0 +1,10 @@
+import { WasiCliStdout } from './interfaces/wasi-cli-stdout.js';
+import { WasiIoError } from './interfaces/wasi-io-error.js';
+import { WasiIoPoll } from './interfaces/wasi-io-poll.js';
+import { WasiIoStreams } from './interfaces/wasi-io-streams.js';
+import { WasiWebgpuFrameBuffer } from './interfaces/wasi-webgpu-frame-buffer.js';
+import { WasiWebgpuGraphicsContext } from './interfaces/wasi-webgpu-graphics-context.js';
+import { WasiWebgpuSurface } from './interfaces/wasi-webgpu-surface.js';
+import { WasiWebgpuWebgpu } from './interfaces/wasi-webgpu-webgpu.js';
+import { WasiCliRun } from './interfaces/wasi-cli-run.js';
+export const run: typeof WasiCliRun;
