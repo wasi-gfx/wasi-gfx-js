@@ -8,7 +8,8 @@ npm run build
 ## Examples
 
 ### Available examples:
-- hello-world
+- hello-compute
+- hello-triangle
 
 ### Compile an example:
 ```shell
