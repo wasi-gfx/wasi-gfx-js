@@ -12,7 +12,7 @@ export default function(args) {
         },
         plugins: [
             typescript({
-                tsconfig: './tsconfig.examples.json',
+                tsconfig: './examples/tsconfig.json',
             }),
         ]
     };
