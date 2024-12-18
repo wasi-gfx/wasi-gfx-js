@@ -10,6 +10,7 @@
     "devDependencies": {
         "@bytecodealliance/jco": "^1.8.1",
         "@rollup/plugin-typescript": "^12.1.1",
+        "@webgpu/types": "^0.1.52",
         "rollup": "^4.12.0",
         "tslib": "^2.8.1",
         "typescript": "^5.7.2"

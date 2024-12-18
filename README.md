@@ -22,5 +22,5 @@ Use [github.com/wasi-gfx/graphtime](https://github.com/wasi-gfx/graphtime) to ru
 
 ## Generate types from wit
 ```shell
-jco types wit --out-dir=types/wit
+jco types wit --out-dir=types
 ```
