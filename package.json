@@ -2,9 +2,9 @@
     "main": "index.js",
     "type": "module",
     "scripts": {
-        "build": "tsc",
+        "build": "cd src && tsc",
         "example": "npm run example:rollup && npm run example:jco",
-        "example:rollup": "rollup --config --configExample=$npm_config_example",
+        "example:rollup": "rollup --config './examples/rollup.config.js' --configExample=$npm_config_example",
         "example:jco": "mkdir -p out && jco componentize temp/$npm_config_example.js --wit ./wit -n imports -o out/$npm_config_example.wasm --disable 'http'"
     },
     "devDependencies": {

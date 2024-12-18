@@ -1,4 +1,4 @@
-import { createCanvas, getGpu } from "../index";
+import { createCanvas, getGpu } from "../src/index";
 
 export const run = {
     async run() {
