@@ -1,0 +1,19 @@
+{
+  "extends": "../tsconfig.json",
+  "exclude": [
+    "./cts/**/*.ts"
+  ],
+  "compilerOptions": {
+    "types": [
+      "@webgpu/types",
+      // cts uses `require` if `globalThis.performance` is not defined, but since ComponentizeJS has `performance` out of the box we'd never reach it.
+      "@types/node",
+      "@types/dom-mediacapture-transform",
+      "@types/w3c-image-capture"
+    ],
+    // cts has the following checks turned off
+    "noUncheckedIndexedAccess": false,
+    "noFallthroughCasesInSwitch": false,
+    "noPropertyAccessFromIndexSignature": false,
+  }
+}
