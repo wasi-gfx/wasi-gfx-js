@@ -1,4 +1,8 @@
-package wasi:webgpu;
+package wasi:graphics-context@0.0.1;
+
+world imports {
+  import graphics-context;
+}
 
 interface graphics-context {
   resource context {

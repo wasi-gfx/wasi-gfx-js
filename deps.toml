@@ -13,6 +13,3 @@ subdir = "graphics-context"
 [frame-buffer]
 url = "https://github.com/WebAssembly/wasi-gfx/archive/refs/heads/v0.0.1.tar.gz"
 subdir = "frame-buffer"
-
-[cli]
-url = "https://github.com/WebAssembly/wasi-cli/archive/6ae82617096e83e6606047736e84ac397b788631.tar.gz"

@@ -1,6 +1,6 @@
-import * as gfx from 'wasi:webgpu/webgpu';
-import * as wasiSurface from 'wasi:webgpu/surface';
-import * as wasiGraphicsContext from 'wasi:webgpu/graphics-context';
+import * as gfx from 'wasi:webgpu/webgpu@0.0.1';
+import * as wasiSurface from 'wasi:surface/surface@0.0.1';
+import * as wasiGraphicsContext from 'wasi:graphics-context/graphics-context@0.0.1';
 
 export function createCanvas(): HTMLCanvasElement {
     return new HTMLCanvasElement(key);
@@ -224,7 +224,7 @@ function convertTextureDimensionWebToWasi(name: GPUTextureDimension): gfx.GpuTex
         case "1d":
             return "d1";
         case "2d":
-            return "d3";
+            return "d2";
         case "3d":
             return "d3";
     }
@@ -235,7 +235,7 @@ function convertTextureDimensionWasiToWeb(name: gfx.GpuTextureDimension): GPUTex
         case "d1":
             return "1d";
         case "d2":
-            return "3d";
+            return "2d";
         case "d3":
             return "3d";
     }
@@ -247,7 +247,7 @@ function convertTextureViewDimensionWebToWasi(name: GPUTextureViewDimension): gf
         case "1d":
             return "d1";
         case "2d":
-            return "d3";
+            return "d2";
         case "3d":
             return "d3";
         case "2d-array":
@@ -262,7 +262,7 @@ function convertTextureViewDimensionWasiToWeb(name: gfx.GpuTextureViewDimension)
         case "d1":
             return "1d";
         case "d2":
-            return "3d";
+            return "2d";
         case "d3":
             return "3d";
         case "d2-array":
@@ -272,23 +272,22 @@ function convertTextureViewDimensionWasiToWeb(name: gfx.GpuTextureViewDimension)
     }
 }
 
-function convertGpuLayoutWebToWasi(layout: GPUAutoLayoutMode | globalThis.GPUPipelineLayout): gfx.GpuLayout {
+function convertGpuLayoutWebToWasi(layout: GPUAutoLayoutMode | globalThis.GPUPipelineLayout): gfx.GpuLayoutMode {
     if (layout instanceof GPUPipelineLayout) {
         return {
-            tag: 'gpu-pipeline-layout',
+            tag: 'specific',
             val: layout[inner],
         }
-    } else if (typeof layout === 'string') {
+    } else if (layout === 'auto') {
         return {
-            tag: 'gpu-auto-layout-mode',
-            val: layout,
+            tag: 'auto',
         }
     } else {
         throw new Unreachable;
     }
 }
 
-function convertGpuLayoutWasiToWeb(layout: gfx.GpuLayout): GPUPipelineLayout | GPUAutoLayoutMode {
+function convertGpuLayoutWasiToWeb(layout: gfx.GpuLayoutMode): GPUPipelineLayout | GPUAutoLayoutMode {
     throw new Todo;
 }
 
@@ -404,7 +403,7 @@ function convertBufferToUint8Array(buffer: ArrayBufferView | ArrayBuffer | Share
     }
 }
 
-// When forwarding a method to gfx.[type].[method], always pass down objects (like `...descriptor`) so that if new fields are added tsc can catch it.
+// When forwarding a method to gfx.[type].[method], always pass down objects (like `...descriptor`) so that if new fields are added and tsc can catch it.
 
 type LimitedCanvas = Pick<globalThis.HTMLCanvasElement, "height" | "width" | "getContext" | "transferControlToOffscreen" | "addEventListener" | "removeEventListener" | "dispatchEvent" | "onclick" | "ondblclick" | "oninput" | "onkeydown" | "onkeyup" | "onpointerdown" | "onpointermove" | "onpointerup">;
 export class HTMLCanvasElement implements LimitedCanvas, AnimationFrameProvider {
@@ -484,7 +483,7 @@ export class HTMLCanvasElement implements LimitedCanvas, AnimationFrameProvider 
             this.#framePollable = this._surface.subscribeFrame();
         const pollable = this.#framePollable;
 
-        // giving the even loop a chance to do other work before blocking.
+        // giving the event loop a chance to do other work before blocking.
         Promise.resolve().then(() => {
             pollable.block();
             this._surface.getFrame();
@@ -727,7 +726,7 @@ export class GPUDevice extends EventTarget implements globalThis.GPUDevice {
         let compilationHints: gfx.GpuShaderModuleCompilationHint[] | undefined;
         if (descriptor.compilationHints) {
             compilationHints = descriptor.compilationHints.map(hint => {
-                let layout: gfx.GpuLayout | undefined;
+                let layout: gfx.GpuLayoutMode | undefined;
                 if (hint.layout) {
                     layout = convertGpuLayoutWebToWasi(hint.layout);
                 }
@@ -1024,6 +1023,9 @@ export class GPURenderPipeline implements globalThis.GPURenderPipeline {
 
 export class GPUBuffer implements globalThis.GPUBuffer {
     [inner]: gfx.GpuBuffer;
+    _mappedRangeBuffer: Uint8Array | undefined;
+    _mappedRangeOffset: bigint | undefined;
+    _mappedRangeSize: bigint | undefined;
 
     constructor(k: symbol, i: gfx.GpuBuffer) {
         privateConstructorCalled(k);
@@ -1064,12 +1066,20 @@ export class GPUBuffer implements globalThis.GPUBuffer {
         offset?: GPUSize64,
         size?: GPUSize64
     ): ArrayBuffer {
-        const buffer = this[inner].getMappedRange(numToBigIntOptional(offset), numToBigIntOptional(size));
-        // TODO: do we need to proxy the ArrayBuffer for setters?
-        return buffer.get().buffer;
+        this._mappedRangeBuffer = this[inner].getMappedRangeGetWithCopy(numToBigIntOptional(offset), numToBigIntOptional(size));
+        this._mappedRangeOffset = numToBigIntOptional(offset);
+        this._mappedRangeSize = numToBigIntOptional(size);
+        return this._mappedRangeBuffer.buffer;
     }
 
     unmap(): undefined {
+        if (!this._mappedRangeBuffer) {
+            throw new Todo();
+        }
+        this[inner].getMappedRangeSetWithCopy(this._mappedRangeBuffer, this._mappedRangeOffset, this._mappedRangeSize);
+        this._mappedRangeBuffer = undefined;
+        this._mappedRangeOffset = undefined;
+        this._mappedRangeSize = undefined;
         this[inner].unmap();
     }
 
@@ -1111,11 +1121,11 @@ export class GPUQueue implements globalThis.GPUQueue {
         dataOffset?: GPUSize64,
         size?: GPUSize64
     ): undefined {
-        this[inner].writeBuffer(
+        this[inner].writeBufferWithCopy(
             buffer[inner],
             BigInt(bufferOffset),
-            numToBigIntOptional(dataOffset),
             convertBufferToUint8Array(data),
+            numToBigIntOptional(dataOffset),
             numToBigIntOptional(size)
         );
     }
@@ -1131,7 +1141,7 @@ export class GPUQueue implements globalThis.GPUQueue {
         if(destination.origin) {
             destinationOrigin = convertOrigin3DWebToWasi(destination.origin);
         }
-        this[inner].writeTexture(
+        this[inner].writeTextureWithCopy(
             {
                 ...destination,
                 texture: destinationTexture,
@@ -1468,22 +1478,24 @@ export class GPUComputePassEncoder implements globalThis.GPUComputePassEncoder {
         this[inner].insertDebugMarker(markerLabel);
     }
 
-    // function overloading:
-    // setBindGroup(index: GPUIndex32, bindGroup: GPUBindGroup | null, dynamicOffsets?: Iterable<GPUBufferDynamicOffset>): undefined;
-    // setBindGroup(index: GPUIndex32, bindGroup: GPUBindGroup | null, dynamicOffsetsData: Uint32Array, dynamicOffsetsDataStart: GPUSize64, dynamicOffsetsDataLength: GPUSize32): undefined;
     setBindGroup(index: GPUIndex32, bindGroup: GPUBindGroup | null, dynamicOffsetsData?: Iterable<GPUBufferDynamicOffset> | Uint32Array, dynamicOffsetsDataStart?: GPUSize64, dynamicOffsetsDataLength?: GPUSize32): undefined {
         let bindGroupGfx: gfx.GpuBindGroup | undefined;
         if (bindGroup)
             bindGroupGfx = bindGroup[inner];
         if ((dynamicOffsetsData === undefined || dynamicOffsetsData[Symbol.iterator]) && dynamicOffsetsDataStart === undefined && dynamicOffsetsDataLength === undefined) {
             let dynamicOffsetsDataGfx: Uint32Array | undefined;
-            if (dynamicOffsetsData)
-                throw new Todo;
-            this[inner].setBindGroup(index, bindGroupGfx, dynamicOffsetsDataGfx);
+            if (dynamicOffsetsData) {
+                if (dynamicOffsetsData instanceof Uint32Array) {
+                    dynamicOffsetsDataGfx = dynamicOffsetsData;
+                } else {
+                    dynamicOffsetsDataGfx = new Uint32Array(dynamicOffsetsData);
+                }
+            }
+            this[inner].setBindGroup(index, bindGroupGfx, dynamicOffsetsDataGfx, dynamicOffsetsDataStart, dynamicOffsetsDataLength);
         } else if (dynamicOffsetsData instanceof Uint32Array && typeof dynamicOffsetsDataStart === "number" && typeof dynamicOffsetsDataLength === "number") {
-            this[inner].setBindGroup(index, bindGroupGfx, dynamicOffsetsData);
+            this[inner].setBindGroup(index, bindGroupGfx, dynamicOffsetsData, BigInt(dynamicOffsetsDataStart), dynamicOffsetsDataLength);
         } else {
-            throw new Error("Invalid functions arguments passed to setBindGroup");
+            throw new Todo;
         }
     }
 }
@@ -1624,7 +1636,6 @@ export class GPUCommandBuffer implements globalThis.GPUCommandBuffer {
 }
 
 export function getGpu() {
-    // @ts-ignore - TODO: figure out why TypeScript doesn't recognize gfx.getGpu
     return new GPU(key, gfx.getGpu());
 }
 

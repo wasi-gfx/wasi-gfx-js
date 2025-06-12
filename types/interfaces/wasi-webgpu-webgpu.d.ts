@@ -1,53 +1,8 @@
-export namespace WasiWebgpuWebgpu {
-  export function getGpu(): Gpu;
-  export { GpuSupportedLimits };
-  export { GpuSupportedFeatures };
-  export { WgslLanguageFeatures };
-  export { GpuAdapterInfo };
-  export { Gpu };
-  export { GpuAdapter };
-  export { RecordGpuSize64 };
-  export { GpuDevice };
-  export { GpuBuffer };
-  export { GpuBufferUsage };
-  export { GpuMapMode };
-  export { GpuTexture };
-  export { GpuTextureUsage };
-  export { GpuTextureView };
-  export { GpuSampler };
-  export { GpuBindGroupLayout };
-  export { GpuShaderStage };
-  export { GpuBindGroup };
-  export { GpuPipelineLayout };
-  export { GpuShaderModule };
-  export { GpuCompilationMessage };
-  export { GpuCompilationInfo };
-  export { GpuPipelineError };
-  export { RecordGpuPipelineConstantValue };
-  export { GpuComputePipeline };
-  export { GpuRenderPipeline };
-  export { GpuColorWrite };
-  export { GpuCommandBuffer };
-  export { GpuCommandEncoder };
-  export { GpuComputePassEncoder };
-  export { GpuRenderPassEncoder };
-  export { GpuRenderBundle };
-  export { GpuRenderBundleEncoder };
-  export { GpuQueue };
-  export { GpuQuerySet };
-  export { GpuCanvasContext };
-  export { GpuDeviceLostInfo };
-  export { GpuError };
-  export { GpuValidationError };
-  export { GpuOutOfMemoryError };
-  export { GpuInternalError };
-  export { GpuUncapturedErrorEvent };
-  export { NonStandardBuffer };
-}
-import type { Context } from './wasi-webgpu-graphics-context.js';
-export { Context };
-import type { AbstractBuffer } from './wasi-webgpu-graphics-context.js';
-export { AbstractBuffer };
+/** @module Interface wasi:webgpu/webgpu@0.0.1 **/
+export function getGpu(): Gpu;
+export type Pollable = import('./wasi-io-poll.js').Pollable;
+export type Context = import('./wasi-graphics-context-graphics-context.js').Context;
+export type AbstractBuffer = import('./wasi-graphics-context-graphics-context.js').AbstractBuffer;
 /**
  * # Variants
  * 
@@ -57,8 +12,10 @@ export { AbstractBuffer };
  */
 export type GpuPowerPreference = 'low-power' | 'high-performance';
 export interface GpuRequestAdapterOptions {
+  featureLevel?: string,
   powerPreference?: GpuPowerPreference,
   forceFallbackAdapter?: boolean,
+  xrCompatible?: boolean,
 }
 /**
  * # Variants
@@ -75,6 +32,8 @@ export interface GpuRequestAdapterOptions {
  * 
  * ## `"texture-compression-astc"`
  * 
+ * ## `"texture-compression-astc-sliced3d"`
+ * 
  * ## `"timestamp-query"`
  * 
  * ## `"indirect-first-instance"`
@@ -87,11 +46,15 @@ export interface GpuRequestAdapterOptions {
  * 
  * ## `"float32-filterable"`
  * 
+ * ## `"float32-blendable"`
+ * 
  * ## `"clip-distances"`
  * 
  * ## `"dual-source-blending"`
+ * 
+ * ## `"subgroups"`
  */
-export type GpuFeatureName = 'depth-clip-control' | 'depth32float-stencil8' | 'texture-compression-bc' | 'texture-compression-bc-sliced3d' | 'texture-compression-etc2' | 'texture-compression-astc' | 'timestamp-query' | 'indirect-first-instance' | 'shader-f16' | 'rg11b10ufloat-renderable' | 'bgra8unorm-storage' | 'float32-filterable' | 'clip-distances' | 'dual-source-blending';
+export type GpuFeatureName = 'depth-clip-control' | 'depth32float-stencil8' | 'texture-compression-bc' | 'texture-compression-bc-sliced3d' | 'texture-compression-etc2' | 'texture-compression-astc' | 'texture-compression-astc-sliced3d' | 'timestamp-query' | 'indirect-first-instance' | 'shader-f16' | 'rg11b10ufloat-renderable' | 'bgra8unorm-storage' | 'float32-filterable' | 'float32-blendable' | 'clip-distances' | 'dual-source-blending' | 'subgroups';
 /**
  * # Variants
  * 
@@ -453,7 +416,7 @@ export interface GpuStorageTextureBindingLayout {
   viewDimension?: GpuTextureViewDimension,
 }
 export interface GpuPipelineLayoutDescriptor {
-  bindGroupLayouts: Array<GpuBindGroupLayout>,
+  bindGroupLayouts: Array<GpuBindGroupLayout | undefined>,
   label?: string,
 }
 /**
@@ -474,27 +437,17 @@ export type GpuCompilationMessageType = 'error' | 'warning' | 'info';
  * ## `"internal"`
  */
 export type GpuPipelineErrorReason = 'validation' | 'internal';
-export interface GpuPipelineErrorInit {
-  reason: GpuPipelineErrorReason,
-}
-/**
- * # Variants
- * 
- * ## `"auto"`
- */
-export type GpuAutoLayoutMode = 'auto';
-export type GpuLayout = GpuLayoutGpuAutoLayoutMode | GpuLayoutGpuPipelineLayout;
-export interface GpuLayoutGpuAutoLayoutMode {
-  tag: 'gpu-auto-layout-mode',
-  val: GpuAutoLayoutMode,
-}
-export interface GpuLayoutGpuPipelineLayout {
-  tag: 'gpu-pipeline-layout',
+export type GpuLayoutMode = GpuLayoutModeSpecific | GpuLayoutModeAuto;
+export interface GpuLayoutModeSpecific {
+  tag: 'specific',
   val: GpuPipelineLayout,
+}
+export interface GpuLayoutModeAuto {
+  tag: 'auto',
 }
 export interface GpuShaderModuleCompilationHint {
   entryPoint: string,
-  layout?: GpuLayout,
+  layout?: GpuLayoutMode,
 }
 export interface GpuShaderModuleDescriptor {
   code: string,
@@ -509,7 +462,7 @@ export interface GpuProgrammableStage {
 export type GpuPipelineConstantValue = number;
 export interface GpuComputePipelineDescriptor {
   compute: GpuProgrammableStage,
-  layout: GpuLayout,
+  layout: GpuLayoutMode,
   label?: string,
 }
 /**
@@ -661,37 +614,55 @@ export interface GpuPrimitiveState {
 /**
  * # Variants
  * 
+ * ## `"uint8"`
+ * 
  * ## `"uint8x2"`
  * 
  * ## `"uint8x4"`
+ * 
+ * ## `"sint8"`
  * 
  * ## `"sint8x2"`
  * 
  * ## `"sint8x4"`
  * 
+ * ## `"unorm8"`
+ * 
  * ## `"unorm8x2"`
  * 
  * ## `"unorm8x4"`
+ * 
+ * ## `"snorm8"`
  * 
  * ## `"snorm8x2"`
  * 
  * ## `"snorm8x4"`
  * 
+ * ## `"uint16"`
+ * 
  * ## `"uint16x2"`
  * 
  * ## `"uint16x4"`
+ * 
+ * ## `"sint16"`
  * 
  * ## `"sint16x2"`
  * 
  * ## `"sint16x4"`
  * 
+ * ## `"unorm16"`
+ * 
  * ## `"unorm16x2"`
  * 
  * ## `"unorm16x4"`
  * 
+ * ## `"snorm16"`
+ * 
  * ## `"snorm16x2"`
  * 
  * ## `"snorm16x4"`
+ * 
+ * ## `"float16"`
  * 
  * ## `"float16x2"`
  * 
@@ -722,8 +693,10 @@ export interface GpuPrimitiveState {
  * ## `"sint32x4"`
  * 
  * ## `"unorm1010102"`
+ * 
+ * ## `"unorm8x4-bgra"`
  */
-export type GpuVertexFormat = 'uint8x2' | 'uint8x4' | 'sint8x2' | 'sint8x4' | 'unorm8x2' | 'unorm8x4' | 'snorm8x2' | 'snorm8x4' | 'uint16x2' | 'uint16x4' | 'sint16x2' | 'sint16x4' | 'unorm16x2' | 'unorm16x4' | 'snorm16x2' | 'snorm16x4' | 'float16x2' | 'float16x4' | 'float32' | 'float32x2' | 'float32x3' | 'float32x4' | 'uint32' | 'uint32x2' | 'uint32x3' | 'uint32x4' | 'sint32' | 'sint32x2' | 'sint32x3' | 'sint32x4' | 'unorm1010102';
+export type GpuVertexFormat = 'uint8' | 'uint8x2' | 'uint8x4' | 'sint8' | 'sint8x2' | 'sint8x4' | 'unorm8' | 'unorm8x2' | 'unorm8x4' | 'snorm8' | 'snorm8x2' | 'snorm8x4' | 'uint16' | 'uint16x2' | 'uint16x4' | 'sint16' | 'sint16x2' | 'sint16x4' | 'unorm16' | 'unorm16x2' | 'unorm16x4' | 'snorm16' | 'snorm16x2' | 'snorm16x4' | 'float16' | 'float16x2' | 'float16x4' | 'float32' | 'float32x2' | 'float32x3' | 'float32x4' | 'uint32' | 'uint32x2' | 'uint32x3' | 'uint32x4' | 'sint32' | 'sint32x2' | 'sint32x3' | 'sint32x4' | 'unorm1010102' | 'unorm8x4-bgra';
 /**
  * # Variants
  * 
@@ -762,7 +735,7 @@ export interface GpuQueueDescriptor {
 }
 export interface GpuDeviceDescriptor {
   requiredFeatures?: Array<GpuFeatureName>,
-  requiredLimits?: RecordGpuSize64,
+  requiredLimits?: RecordOptionGpuSize64,
   defaultQueue?: GpuQueueDescriptor,
   label?: string,
 }
@@ -811,9 +784,6 @@ export type GpuDeviceLostReason = 'unknown' | 'destroyed';
  * ## `"internal"`
  */
 export type GpuErrorFilter = 'validation' | 'out-of-memory' | 'internal';
-export interface GpuUncapturedErrorEventInit {
-  error: GpuError,
-}
 export type GpuBufferDynamicOffset = number;
 export type GpuStencilValue = number;
 export interface GpuRenderPassDepthStencilAttachment {
@@ -933,15 +903,15 @@ export interface GpuRenderPipelineDescriptor {
   depthStencil?: GpuDepthStencilState,
   multisample?: GpuMultisampleState,
   fragment?: GpuFragmentState,
-  layout: GpuLayout,
+  layout: GpuLayoutMode,
   label?: string,
 }
-export interface GpuImageDataLayout {
+export interface GpuTexelCopyBufferLayout {
   offset?: GpuSize64,
   bytesPerRow?: GpuSize32,
   rowsPerImage?: GpuSize32,
 }
-export interface GpuImageCopyBuffer {
+export interface GpuTexelCopyBufferInfo {
   buffer: GpuBuffer,
   offset?: GpuSize64,
   bytesPerRow?: GpuSize32,
@@ -960,12 +930,6 @@ export interface GpuRenderPassTimestampWrites {
   querySet: GpuQuerySet,
   beginningOfPassWriteIndex?: GpuSize32,
   endOfPassWriteIndex?: GpuSize32,
-}
-export interface GpuRenderPassLayout {
-  colorFormats: Array<GpuTextureFormat | undefined>,
-  depthStencilFormat?: GpuTextureFormat,
-  sampleCount?: GpuSize32,
-  label?: string,
 }
 export interface GpuRenderBundleEncoderDescriptor {
   depthReadOnly?: boolean,
@@ -1012,7 +976,7 @@ export interface GpuOrigin3D {
   y?: GpuIntegerCoordinate,
   z?: GpuIntegerCoordinate,
 }
-export interface GpuImageCopyTexture {
+export interface GpuTexelCopyTextureInfo {
   texture: GpuTexture,
   mipLevel?: GpuIntegerCoordinate,
   origin?: GpuOrigin3D,
@@ -1041,13 +1005,6 @@ export interface GpuTextureDescriptor {
  * ## `"display-p3"`
  */
 export type PredefinedColorSpace = 'srgb' | 'display-p3';
-export interface GpuDeviceConfiguration {
-  format: GpuTextureFormat,
-  usage?: GpuTextureUsageFlags,
-  viewFormats?: Array<GpuTextureFormat>,
-  colorSpace?: PredefinedColorSpace,
-  alphaMode?: GpuCanvasAlphaMode,
-}
 export interface GpuCanvasConfiguration {
   device: GpuDevice,
   format: GpuTextureFormat,
@@ -1057,7 +1014,7 @@ export interface GpuCanvasConfiguration {
   toneMapping?: GpuCanvasToneMapping,
   alphaMode?: GpuCanvasAlphaMode,
 }
-export interface GpuImageCopyTextureTagged {
+export interface GpuCopyExternalImageDestInfo {
   colorSpace?: PredefinedColorSpace,
   premultipliedAlpha?: boolean,
   texture: GpuTexture,
@@ -1065,14 +1022,130 @@ export interface GpuImageCopyTextureTagged {
   origin?: GpuOrigin3D,
   aspect?: GpuTextureAspect,
 }
+export interface GpuCanvasConfigurationOwned {
+  device: GpuDevice,
+  format: GpuTextureFormat,
+  usage?: GpuTextureUsageFlags,
+  viewFormats?: Array<GpuTextureFormat>,
+  colorSpace?: PredefinedColorSpace,
+  toneMapping?: GpuCanvasToneMapping,
+  alphaMode?: GpuCanvasAlphaMode,
+}
+export type GpuErrorKind = GpuErrorKindValidationError | GpuErrorKindOutOfMemoryError | GpuErrorKindInternalError;
+export interface GpuErrorKindValidationError {
+  tag: 'validation-error',
+}
+export interface GpuErrorKindOutOfMemoryError {
+  tag: 'out-of-memory-error',
+}
+export interface GpuErrorKindInternalError {
+  tag: 'internal-error',
+}
+export type RequestDeviceErrorKind = RequestDeviceErrorKindTypeError | RequestDeviceErrorKindOperationError;
+export interface RequestDeviceErrorKindTypeError {
+  tag: 'type-error',
+}
+export interface RequestDeviceErrorKindOperationError {
+  tag: 'operation-error',
+}
+export interface RequestDeviceError {
+  kind: RequestDeviceErrorKind,
+  message: string,
+}
+export type CreatePipelineErrorKind = CreatePipelineErrorKindGpuPipelineError;
+export interface CreatePipelineErrorKindGpuPipelineError {
+  tag: 'gpu-pipeline-error',
+  val: GpuPipelineErrorReason,
+}
+export interface CreatePipelineError {
+  kind: CreatePipelineErrorKind,
+  message: string,
+}
+export type CreateQuerySetErrorKind = CreateQuerySetErrorKindTypeError;
+export interface CreateQuerySetErrorKindTypeError {
+  tag: 'type-error',
+}
+export interface CreateQuerySetError {
+  kind: CreateQuerySetErrorKind,
+  message: string,
+}
+export type PopErrorScopeErrorKind = PopErrorScopeErrorKindOperationError;
+export interface PopErrorScopeErrorKindOperationError {
+  tag: 'operation-error',
+}
+export interface PopErrorScopeError {
+  kind: PopErrorScopeErrorKind,
+  message: string,
+}
+export type MapAsyncErrorKind = MapAsyncErrorKindOperationError | MapAsyncErrorKindRangeError | MapAsyncErrorKindAbortError;
+export interface MapAsyncErrorKindOperationError {
+  tag: 'operation-error',
+}
+export interface MapAsyncErrorKindRangeError {
+  tag: 'range-error',
+}
+export interface MapAsyncErrorKindAbortError {
+  tag: 'abort-error',
+}
+export interface MapAsyncError {
+  kind: MapAsyncErrorKind,
+  message: string,
+}
+export type GetMappedRangeErrorKind = GetMappedRangeErrorKindOperationError | GetMappedRangeErrorKindRangeError | GetMappedRangeErrorKindTypeError;
+export interface GetMappedRangeErrorKindOperationError {
+  tag: 'operation-error',
+}
+export interface GetMappedRangeErrorKindRangeError {
+  tag: 'range-error',
+}
+export interface GetMappedRangeErrorKindTypeError {
+  tag: 'type-error',
+}
+export interface GetMappedRangeError {
+  kind: GetMappedRangeErrorKind,
+  message: string,
+}
+export type UnmapErrorKind = UnmapErrorKindAbortError;
+export interface UnmapErrorKindAbortError {
+  tag: 'abort-error',
+}
+export interface UnmapError {
+  kind: UnmapErrorKind,
+  message: string,
+}
+export type SetBindGroupErrorKind = SetBindGroupErrorKindRangeError;
+export interface SetBindGroupErrorKindRangeError {
+  tag: 'range-error',
+}
+export interface SetBindGroupError {
+  kind: SetBindGroupErrorKind,
+  message: string,
+}
+export type WriteBufferErrorKind = WriteBufferErrorKindOperationError;
+export interface WriteBufferErrorKindOperationError {
+  tag: 'operation-error',
+}
+export interface WriteBufferError {
+  kind: WriteBufferErrorKind,
+  message: string,
+}
+export type Option<T> = { tag: 'none' } | { tag: 'some', val: T };
 
 export class Gpu {
+  /**
+   * This type does not have a public constructor.
+   */
+  private constructor();
   requestAdapter(options: GpuRequestAdapterOptions | undefined): GpuAdapter | undefined;
   getPreferredCanvasFormat(): GpuTextureFormat;
   wgslLanguageFeatures(): WgslLanguageFeatures;
 }
 
 export class GpuAdapter {
+  /**
+   * This type does not have a public constructor.
+   */
+  private constructor();
   features(): GpuSupportedFeatures;
   limits(): GpuSupportedLimits;
   info(): GpuAdapterInfo;
@@ -1081,35 +1154,58 @@ export class GpuAdapter {
 }
 
 export class GpuAdapterInfo {
+  /**
+   * This type does not have a public constructor.
+   */
+  private constructor();
   vendor(): string;
   architecture(): string;
   device(): string;
   description(): string;
+  subgroupMinSize(): number;
+  subgroupMaxSize(): number;
 }
 
 export class GpuBindGroup {
+  /**
+   * This type does not have a public constructor.
+   */
+  private constructor();
   label(): string;
   setLabel(label: string): void;
 }
 
 export class GpuBindGroupLayout {
+  /**
+   * This type does not have a public constructor.
+   */
+  private constructor();
   label(): string;
   setLabel(label: string): void;
 }
 
 export class GpuBuffer {
+  /**
+   * This type does not have a public constructor.
+   */
+  private constructor();
   size(): GpuSize64Out;
   usage(): GpuFlagsConstant;
   mapState(): GpuBufferMapState;
   mapAsync(mode: GpuMapModeFlags, offset: GpuSize64 | undefined, size: GpuSize64 | undefined): void;
-  getMappedRange(offset: GpuSize64 | undefined, size: GpuSize64 | undefined): NonStandardBuffer;
+  getMappedRangeGetWithCopy(offset: GpuSize64 | undefined, size: GpuSize64 | undefined): Uint8Array;
   unmap(): void;
   destroy(): void;
   label(): string;
   setLabel(label: string): void;
+  getMappedRangeSetWithCopy(data: Uint8Array, offset: GpuSize64 | undefined, size: GpuSize64 | undefined): void;
 }
 
 export class GpuBufferUsage {
+  /**
+   * This type does not have a public constructor.
+   */
+  private constructor();
   static mapRead(): GpuFlagsConstant;
   static mapWrite(): GpuFlagsConstant;
   static copySrc(): GpuFlagsConstant;
@@ -1123,12 +1219,21 @@ export class GpuBufferUsage {
 }
 
 export class GpuCanvasContext {
+  /**
+   * This type does not have a public constructor.
+   */
+  private constructor();
   configure(configuration: GpuCanvasConfiguration): void;
   unconfigure(): void;
+  getConfiguration(): GpuCanvasConfigurationOwned | undefined;
   getCurrentTexture(): GpuTexture;
 }
 
 export class GpuColorWrite {
+  /**
+   * This type does not have a public constructor.
+   */
+  private constructor();
   static red(): GpuFlagsConstant;
   static green(): GpuFlagsConstant;
   static blue(): GpuFlagsConstant;
@@ -1137,17 +1242,25 @@ export class GpuColorWrite {
 }
 
 export class GpuCommandBuffer {
+  /**
+   * This type does not have a public constructor.
+   */
+  private constructor();
   label(): string;
   setLabel(label: string): void;
 }
 
 export class GpuCommandEncoder {
+  /**
+   * This type does not have a public constructor.
+   */
+  private constructor();
   beginRenderPass(descriptor: GpuRenderPassDescriptor): GpuRenderPassEncoder;
   beginComputePass(descriptor: GpuComputePassDescriptor | undefined): GpuComputePassEncoder;
   copyBufferToBuffer(source: GpuBuffer, sourceOffset: GpuSize64, destination: GpuBuffer, destinationOffset: GpuSize64, size: GpuSize64): void;
-  copyBufferToTexture(source: GpuImageCopyBuffer, destination: GpuImageCopyTexture, copySize: GpuExtent3D): void;
-  copyTextureToBuffer(source: GpuImageCopyTexture, destination: GpuImageCopyBuffer, copySize: GpuExtent3D): void;
-  copyTextureToTexture(source: GpuImageCopyTexture, destination: GpuImageCopyTexture, copySize: GpuExtent3D): void;
+  copyBufferToTexture(source: GpuTexelCopyBufferInfo, destination: GpuTexelCopyTextureInfo, copySize: GpuExtent3D): void;
+  copyTextureToBuffer(source: GpuTexelCopyTextureInfo, destination: GpuTexelCopyBufferInfo, copySize: GpuExtent3D): void;
+  copyTextureToTexture(source: GpuTexelCopyTextureInfo, destination: GpuTexelCopyTextureInfo, copySize: GpuExtent3D): void;
   clearBuffer(buffer: GpuBuffer, offset: GpuSize64 | undefined, size: GpuSize64 | undefined): void;
   resolveQuerySet(querySet: GpuQuerySet, firstQuery: GpuSize32, queryCount: GpuSize32, destination: GpuBuffer, destinationOffset: GpuSize64): void;
   finish(descriptor: GpuCommandBufferDescriptor | undefined): GpuCommandBuffer;
@@ -1159,10 +1272,18 @@ export class GpuCommandEncoder {
 }
 
 export class GpuCompilationInfo {
+  /**
+   * This type does not have a public constructor.
+   */
+  private constructor();
   messages(): Array<GpuCompilationMessage>;
 }
 
 export class GpuCompilationMessage {
+  /**
+   * This type does not have a public constructor.
+   */
+  private constructor();
   message(): string;
   type(): GpuCompilationMessageType;
   lineNum(): bigint;
@@ -1172,6 +1293,10 @@ export class GpuCompilationMessage {
 }
 
 export class GpuComputePassEncoder {
+  /**
+   * This type does not have a public constructor.
+   */
+  private constructor();
   setPipeline(pipeline: GpuComputePipeline): void;
   dispatchWorkgroups(workgroupCountX: GpuSize32, workgroupCountY: GpuSize32 | undefined, workgroupCountZ: GpuSize32 | undefined): void;
   dispatchWorkgroupsIndirect(indirectBuffer: GpuBuffer, indirectOffset: GpuSize64): void;
@@ -1181,19 +1306,27 @@ export class GpuComputePassEncoder {
   pushDebugGroup(groupLabel: string): void;
   popDebugGroup(): void;
   insertDebugMarker(markerLabel: string): void;
-  setBindGroup(index: GpuIndex32, bindGroup: GpuBindGroup | undefined, dynamicOffsets: Uint32Array | undefined): void;
+  setBindGroup(index: GpuIndex32, bindGroup: GpuBindGroup | undefined, dynamicOffsetsData: Uint32Array | undefined, dynamicOffsetsDataStart: GpuSize64 | undefined, dynamicOffsetsDataLength: GpuSize32 | undefined): void;
 }
 
 export class GpuComputePipeline {
+  /**
+   * This type does not have a public constructor.
+   */
+  private constructor();
   label(): string;
   setLabel(label: string): void;
   getBindGroupLayout(index: number): GpuBindGroupLayout;
 }
 
 export class GpuDevice {
-  connectGraphicsContext(context: Context): void;
+  /**
+   * This type does not have a public constructor.
+   */
+  private constructor();
   features(): GpuSupportedFeatures;
   limits(): GpuSupportedLimits;
+  adapterInfo(): GpuAdapterInfo;
   queue(): GpuQueue;
   destroy(): void;
   createBuffer(descriptor: GpuBufferDescriptor): GpuBuffer;
@@ -1215,45 +1348,51 @@ export class GpuDevice {
   lost(): GpuDeviceLostInfo;
   pushErrorScope(filter: GpuErrorFilter): void;
   popErrorScope(): GpuError | undefined;
-  uncapturedErrors(): void;
-  configure(configuration: GpuDeviceConfiguration): void;
+  onuncapturederrorSubscribe(): Pollable;
+  connectGraphicsContext(context: Context): void;
 }
 
 export class GpuDeviceLostInfo {
+  /**
+   * This type does not have a public constructor.
+   */
+  private constructor();
   reason(): GpuDeviceLostReason;
   message(): string;
 }
 
 export class GpuError {
+  /**
+   * This type does not have a public constructor.
+   */
+  private constructor();
   message(): string;
-}
-
-export class GpuInternalError {
-  message(): string;
-  constructor(message: string)
+  kind(): GpuErrorKind;
 }
 
 export class GpuMapMode {
+  /**
+   * This type does not have a public constructor.
+   */
+  private constructor();
   static read(): GpuFlagsConstant;
   static write(): GpuFlagsConstant;
 }
 
-export class GpuOutOfMemoryError {
-  message(): string;
-  constructor(message: string)
-}
-
-export class GpuPipelineError {
-  constructor(message: string | undefined, options: GpuPipelineErrorInit)
-  reason(): GpuPipelineErrorReason;
-}
-
 export class GpuPipelineLayout {
+  /**
+   * This type does not have a public constructor.
+   */
+  private constructor();
   label(): string;
   setLabel(label: string): void;
 }
 
 export class GpuQuerySet {
+  /**
+   * This type does not have a public constructor.
+   */
+  private constructor();
   destroy(): void;
   type(): GpuQueryType;
   count(): GpuSize32Out;
@@ -1262,27 +1401,39 @@ export class GpuQuerySet {
 }
 
 export class GpuQueue {
+  /**
+   * This type does not have a public constructor.
+   */
+  private constructor();
   submit(commandBuffers: Array<GpuCommandBuffer>): void;
   onSubmittedWorkDone(): void;
-  writeBuffer(buffer: GpuBuffer, bufferOffset: GpuSize64, dataOffset: GpuSize64 | undefined, data: Uint8Array, size: GpuSize64 | undefined): void;
-  writeTexture(destination: GpuImageCopyTexture, data: Uint8Array, dataLayout: GpuImageDataLayout, size: GpuExtent3D): void;
+  writeBufferWithCopy(buffer: GpuBuffer, bufferOffset: GpuSize64, data: Uint8Array, dataOffset: GpuSize64 | undefined, size: GpuSize64 | undefined): void;
+  writeTextureWithCopy(destination: GpuTexelCopyTextureInfo, data: Uint8Array, dataLayout: GpuTexelCopyBufferLayout, size: GpuExtent3D): void;
   label(): string;
   setLabel(label: string): void;
 }
 
 export class GpuRenderBundle {
+  /**
+   * This type does not have a public constructor.
+   */
+  private constructor();
   label(): string;
   setLabel(label: string): void;
 }
 
 export class GpuRenderBundleEncoder {
+  /**
+   * This type does not have a public constructor.
+   */
+  private constructor();
   finish(descriptor: GpuRenderBundleDescriptor | undefined): GpuRenderBundle;
   label(): string;
   setLabel(label: string): void;
   pushDebugGroup(groupLabel: string): void;
   popDebugGroup(): void;
   insertDebugMarker(markerLabel: string): void;
-  setBindGroup(index: GpuIndex32, bindGroup: GpuBindGroup | undefined, dynamicOffsets: Uint32Array | undefined): void;
+  setBindGroup(index: GpuIndex32, bindGroup: GpuBindGroup | undefined, dynamicOffsetsData: Uint32Array | undefined, dynamicOffsetsDataStart: GpuSize64 | undefined, dynamicOffsetsDataLength: GpuSize32 | undefined): void;
   setPipeline(pipeline: GpuRenderPipeline): void;
   setIndexBuffer(buffer: GpuBuffer, indexFormat: GpuIndexFormat, offset: GpuSize64 | undefined, size: GpuSize64 | undefined): void;
   setVertexBuffer(slot: GpuIndex32, buffer: GpuBuffer | undefined, offset: GpuSize64 | undefined, size: GpuSize64 | undefined): void;
@@ -1293,6 +1444,10 @@ export class GpuRenderBundleEncoder {
 }
 
 export class GpuRenderPassEncoder {
+  /**
+   * This type does not have a public constructor.
+   */
+  private constructor();
   setViewport(x: number, y: number, width: number, height: number, minDepth: number, maxDepth: number): void;
   setScissorRect(x: GpuIntegerCoordinate, y: GpuIntegerCoordinate, width: GpuIntegerCoordinate, height: GpuIntegerCoordinate): void;
   setBlendConstant(color: GpuColor): void;
@@ -1306,7 +1461,7 @@ export class GpuRenderPassEncoder {
   pushDebugGroup(groupLabel: string): void;
   popDebugGroup(): void;
   insertDebugMarker(markerLabel: string): void;
-  setBindGroup(index: GpuIndex32, bindGroup: GpuBindGroup | undefined, dynamicOffsets: Uint32Array | undefined): void;
+  setBindGroup(index: GpuIndex32, bindGroup: GpuBindGroup | undefined, dynamicOffsetsData: Uint32Array | undefined, dynamicOffsetsDataStart: GpuSize64 | undefined, dynamicOffsetsDataLength: GpuSize32 | undefined): void;
   setPipeline(pipeline: GpuRenderPipeline): void;
   setIndexBuffer(buffer: GpuBuffer, indexFormat: GpuIndexFormat, offset: GpuSize64 | undefined, size: GpuSize64 | undefined): void;
   setVertexBuffer(slot: GpuIndex32, buffer: GpuBuffer | undefined, offset: GpuSize64 | undefined, size: GpuSize64 | undefined): void;
@@ -1317,33 +1472,57 @@ export class GpuRenderPassEncoder {
 }
 
 export class GpuRenderPipeline {
+  /**
+   * This type does not have a public constructor.
+   */
+  private constructor();
   label(): string;
   setLabel(label: string): void;
   getBindGroupLayout(index: number): GpuBindGroupLayout;
 }
 
 export class GpuSampler {
+  /**
+   * This type does not have a public constructor.
+   */
+  private constructor();
   label(): string;
   setLabel(label: string): void;
 }
 
 export class GpuShaderModule {
+  /**
+   * This type does not have a public constructor.
+   */
+  private constructor();
   getCompilationInfo(): GpuCompilationInfo;
   label(): string;
   setLabel(label: string): void;
 }
 
 export class GpuShaderStage {
+  /**
+   * This type does not have a public constructor.
+   */
+  private constructor();
   static vertex(): GpuFlagsConstant;
   static fragment(): GpuFlagsConstant;
   static compute(): GpuFlagsConstant;
 }
 
 export class GpuSupportedFeatures {
+  /**
+   * This type does not have a public constructor.
+   */
+  private constructor();
   has(value: string): boolean;
 }
 
 export class GpuSupportedLimits {
+  /**
+   * This type does not have a public constructor.
+   */
+  private constructor();
   maxTextureDimension1D(): number;
   maxTextureDimension2D(): number;
   maxTextureDimension3D(): number;
@@ -1378,7 +1557,10 @@ export class GpuSupportedLimits {
 }
 
 export class GpuTexture {
-  static fromGraphicsBuffer(buffer: AbstractBuffer): GpuTexture;
+  /**
+   * This type does not have a public constructor.
+   */
+  private constructor();
   createView(descriptor: GpuTextureViewDescriptor | undefined): GpuTextureView;
   destroy(): void;
   width(): GpuIntegerCoordinateOut;
@@ -1391,9 +1573,14 @@ export class GpuTexture {
   usage(): GpuFlagsConstant;
   label(): string;
   setLabel(label: string): void;
+  static fromGraphicsBuffer(buffer: AbstractBuffer): GpuTexture;
 }
 
 export class GpuTextureUsage {
+  /**
+   * This type does not have a public constructor.
+   */
+  private constructor();
   static copySrc(): GpuFlagsConstant;
   static copyDst(): GpuFlagsConstant;
   static textureBinding(): GpuFlagsConstant;
@@ -1402,47 +1589,48 @@ export class GpuTextureUsage {
 }
 
 export class GpuTextureView {
+  /**
+   * This type does not have a public constructor.
+   */
+  private constructor();
   label(): string;
   setLabel(label: string): void;
 }
 
 export class GpuUncapturedErrorEvent {
-  constructor(type: string, gpuUncapturedErrorEventInitDict: GpuUncapturedErrorEventInit)
+  /**
+   * This type does not have a public constructor.
+   */
+  private constructor();
   error(): GpuError;
-}
-
-export class GpuValidationError {
-  message(): string;
-  constructor(message: string)
-}
-
-export class NonStandardBuffer {
-  get(): Uint8Array;
-  set(val: Uint8Array): void;
 }
 
 export class RecordGpuPipelineConstantValue {
   constructor()
   add(key: string, value: GpuPipelineConstantValue): void;
-  get(key: string): GpuPipelineConstantValue;
+  get(key: string): GpuPipelineConstantValue | undefined;
   has(key: string): boolean;
   remove(key: string): void;
   keys(): Array<string>;
   values(): Float64Array;
-  entries(): [string, GpuPipelineConstantValue];
+  entries(): Array<[string, GpuPipelineConstantValue]>;
 }
 
-export class RecordGpuSize64 {
+export class RecordOptionGpuSize64 {
   constructor()
-  add(key: string, value: GpuSize64): void;
-  get(key: string): GpuSize64;
+  add(key: string, value: GpuSize64 | undefined): void;
+  get(key: string): Option<GpuSize64 | undefined>;
   has(key: string): boolean;
   remove(key: string): void;
   keys(): Array<string>;
-  values(): BigUint64Array;
-  entries(): [string, GpuSize64];
+  values(): Array<GpuSize64 | undefined>;
+  entries(): Array<[string, GpuSize64 | undefined]>;
 }
 
 export class WgslLanguageFeatures {
+  /**
+   * This type does not have a public constructor.
+   */
+  private constructor();
   has(value: string): boolean;
 }
