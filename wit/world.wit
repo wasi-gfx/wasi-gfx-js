@@ -1,7 +1,10 @@
 package wasi-gfx:js-webgpu@0.1.0;
 
 world imports {
-    include wasi:webgpu/imports;
+    import wasi:webgpu/webgpu@0.0.1;
+    import wasi:graphics-context/graphics-context@0.0.1;
+    import wasi:surface/surface@0.0.1;
+    import wasi:frame-buffer/frame-buffer@0.0.1;
     import wasi:cli/stdout@0.2.0;
     export wasi:cli/run@0.2.0;
 }

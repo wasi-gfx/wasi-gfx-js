@@ -9,13 +9,13 @@
         "test:jco": "jco componentize ./temp/tests.js --wit ./wit -n imports -o out/tests.wasm --disable 'http'",
         "example": "npm run example:rollup && npm run example:jco",
         "example:rollup": "rollup --config './examples/rollup.config.js' --configExample=$npm_config_example",
-        "example:jco": "mkdir -p out && jco componentize temp/$npm_config_example.js --wit ./wit -n imports -o out/$npm_config_example.wasm --disable 'http'"
+        "example:jco": "mkdir -p out && jco componentize temp/$npm_config_example.js --wit ./wit -n imports -o out/$npm_config_example.wasm --disable 'http' --debug-starlingmonkey-build"
     },
     "devDependencies": {
-        "@bytecodealliance/jco": "^1.8.1",
+        "@bytecodealliance/jco": "^1.11.2",
         "@rollup/plugin-typescript": "^12.1.1",
         "@types/dom-mediacapture-transform": "^0.1.10",
-        "@types/node": "^22.10.2",
+        "@types/node": "22.15.7",
         "@types/w3c-image-capture": "^1.0.10",
         "@webgpu/types": "^0.1.52",
         "rollup": "^4.12.0",

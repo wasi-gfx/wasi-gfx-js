@@ -1,3 +1,5 @@
+// TODO: broken because of https://github.com/bytecodealliance/ComponentizeJS/issues/221
+
 import { createCanvas, getGpu } from "../src/index";
 
 export const run = {
