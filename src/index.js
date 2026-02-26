@@ -38,10 +38,22 @@ function privateConstructorCalled(k) {
         throw new TypeError("Illegal constructor.");
 }
 // converters
+// don't use raw `Number(x)`/`BigInt(x)` because they accept non-numeric values
+function numToBigInt(n) {
+    return BigInt(n);
+}
+function bigIntToNum(n) {
+    return Number(n);
+}
 function numToBigIntOptional(n) {
     if (n === undefined)
         return undefined;
-    return BigInt(n);
+    return numToBigInt(n);
+}
+function bigIntToNumOptional(n) {
+    if (n === undefined)
+        return undefined;
+    return bigIntToNum(n);
 }
 function convertFeatureNameWebToWasi(name) {
     if (name === "texture-compression-bc-sliced-3d")
@@ -340,10 +352,10 @@ function convertGpuBindingResourceWebToWasi(resource) {
         let bufferBinding = resource;
         let offsetBitInt;
         if (typeof bufferBinding.offset === "number")
-            offsetBitInt = BigInt(bufferBinding.offset);
+            offsetBitInt = numToBigInt(bufferBinding.offset);
         let sizeBitInt;
         if (typeof bufferBinding.size === "number")
-            sizeBitInt = BigInt(bufferBinding.size);
+            sizeBitInt = numToBigInt(bufferBinding.size);
         return {
             tag: 'gpu-buffer-binding',
             val: {
@@ -583,7 +595,7 @@ export class GPUDevice extends EventTarget {
     createBuffer(descriptor) {
         return new GPUBuffer(key, this[inner].createBuffer({
             ...descriptor,
-            size: BigInt(descriptor.size),
+            size: numToBigInt(descriptor.size),
         }));
     }
     createTexture(descriptor) {
@@ -701,11 +713,11 @@ export class GPUDevice extends EventTarget {
                 if (vbl) {
                     return {
                         ...vbl,
-                        arrayStride: BigInt(vbl.arrayStride),
+                        arrayStride: numToBigInt(vbl.arrayStride),
                         attributes: Array.from(vbl.attributes).map(attribute => {
                             return {
                                 ...attribute,
-                                offset: BigInt(attribute.offset),
+                                offset: numToBigInt(attribute.offset),
                                 format: convertVertexFormatWebToWasi(attribute.format),
                             };
                         }),
@@ -842,10 +854,10 @@ export class GPURenderBundleEncoder {
         this[inner].drawIndexed(indexCount, instanceCount, firstIndex, baseVertex, firstInstance);
     }
     drawIndirect(indirectBuffer, indirectOffset) {
-        this[inner].drawIndirect(indirectBuffer[inner], BigInt(indirectOffset));
+        this[inner].drawIndirect(indirectBuffer[inner], numToBigInt(indirectOffset));
     }
     drawIndexedIndirect(indirectBuffer, indirectOffset) {
-        this[inner].drawIndexedIndirect(indirectBuffer[inner], BigInt(indirectOffset));
+        this[inner].drawIndexedIndirect(indirectBuffer[inner], numToBigInt(indirectOffset));
     }
 }
 export class GPURenderBundle {
@@ -956,7 +968,7 @@ export class GPUBuffer {
         this[inner].setLabel(value);
     }
     get size() {
-        return Number(this[inner].size());
+        return bigIntToNum(this[inner].size());
     }
     get usage() {
         return this[inner].usage();
@@ -1009,7 +1021,7 @@ export class GPUQueue {
         throw new Todo();
     }
     writeBuffer(buffer, bufferOffset, data, dataOffset, size) {
-        this[inner].writeBufferWithCopy(buffer[inner], BigInt(bufferOffset), convertBufferToUint8Array(data), numToBigIntOptional(dataOffset), numToBigIntOptional(size));
+        this[inner].writeBufferWithCopy(buffer[inner], numToBigInt(bufferOffset), convertBufferToUint8Array(data), numToBigIntOptional(dataOffset), numToBigIntOptional(size));
     }
     writeTexture(destination, data, dataLayout, size) {
         let destinationTexture = destination.texture[inner];
@@ -1207,7 +1219,7 @@ export class GPUCommandEncoder {
         }));
     }
     copyBufferToBuffer(source, sourceOffset, destination, destinationOffset, size) {
-        this[inner].copyBufferToBuffer(source[inner], BigInt(sourceOffset), destination[inner], BigInt(destinationOffset), BigInt(size));
+        this[inner].copyBufferToBuffer(source[inner], numToBigInt(sourceOffset), destination[inner], numToBigInt(destinationOffset), numToBigInt(size));
     }
     copyBufferToTexture(source, destination, copySize) {
         let destinationOrigin;
@@ -1258,7 +1270,7 @@ export class GPUCommandEncoder {
         this[inner].clearBuffer(buffer[inner], numToBigIntOptional(offset), numToBigIntOptional(size));
     }
     resolveQuerySet(querySet, firstQuery, queryCount, destination, destinationOffset) {
-        this[inner].resolveQuerySet(querySet[inner], firstQuery, queryCount, destination[inner], BigInt(destinationOffset));
+        this[inner].resolveQuerySet(querySet[inner], firstQuery, queryCount, destination[inner], numToBigInt(destinationOffset));
     }
     finish(descriptor) {
         return new GPUCommandBuffer(key, this[inner].finish(descriptor));
@@ -1295,7 +1307,7 @@ export class GPUComputePassEncoder {
         this[inner].dispatchWorkgroups(workgroupCountX, workgroupCountY, workgroupCountZ);
     }
     dispatchWorkgroupsIndirect(indirectBuffer, indirectOffset) {
-        this[inner].dispatchWorkgroupsIndirect(indirectBuffer[inner], BigInt(indirectOffset));
+        this[inner].dispatchWorkgroupsIndirect(indirectBuffer[inner], numToBigInt(indirectOffset));
     }
     end() {
         this[inner].end();
@@ -1326,7 +1338,7 @@ export class GPUComputePassEncoder {
             this[inner].setBindGroup(index, bindGroupGfx, dynamicOffsetsDataGfx, dynamicOffsetsDataStart, dynamicOffsetsDataLength);
         }
         else if (dynamicOffsetsData instanceof Uint32Array && typeof dynamicOffsetsDataStart === "number" && typeof dynamicOffsetsDataLength === "number") {
-            this[inner].setBindGroup(index, bindGroupGfx, dynamicOffsetsData, BigInt(dynamicOffsetsDataStart), dynamicOffsetsDataLength);
+            this[inner].setBindGroup(index, bindGroupGfx, dynamicOffsetsData, numToBigInt(dynamicOffsetsDataStart), dynamicOffsetsDataLength);
         }
         else {
             throw new Todo;
@@ -1403,10 +1415,10 @@ export class GPURenderPassEncoder {
         this[inner].drawIndexed(indexCount, instanceCount, firstIndex, baseVertex, firstInstance);
     }
     drawIndirect(indirectBuffer, indirectOffset) {
-        this[inner].drawIndirect(indirectBuffer[inner], BigInt(indirectOffset));
+        this[inner].drawIndirect(indirectBuffer[inner], numToBigInt(indirectOffset));
     }
     drawIndexedIndirect(indirectBuffer, indirectOffset) {
-        this[inner].drawIndexedIndirect(indirectBuffer[inner], BigInt(indirectOffset));
+        this[inner].drawIndexedIndirect(indirectBuffer[inner], numToBigInt(indirectOffset));
     }
 }
 export class GPUQuerySet {
