@@ -371,27 +371,26 @@ function convertGpuBindingResourceWebToWasi(resource) {
     }
 }
 function convertBufferToUint8Array(buffer) {
-    if (buffer instanceof Int8Array
+    if (buffer instanceof Uint8Array) {
+        return buffer;
+    }
+    else if (buffer instanceof Int8Array
         || buffer instanceof Int16Array
         || buffer instanceof Int32Array
-        || buffer instanceof Uint8Array
         || buffer instanceof Uint16Array
         || buffer instanceof Uint32Array
         || buffer instanceof Uint8ClampedArray
         || buffer instanceof BigInt64Array
         || buffer instanceof BigUint64Array
+        // TODO: enable next line if/when Float16Array is supported in StarlingMonkey
+        // || buffer instanceof Float16Array
         || buffer instanceof Float32Array
-        || buffer instanceof Float64Array) {
+        || buffer instanceof Float64Array
+        || buffer instanceof DataView) {
         return new Uint8Array(buffer.buffer);
     }
-    else if (buffer instanceof DataView) {
-        throw new Todo();
-    }
-    else if (buffer instanceof ArrayBuffer) {
-        throw new Todo();
-    }
-    else if (buffer instanceof SharedArrayBuffer) {
-        throw new Todo();
+    else if (buffer instanceof ArrayBuffer || buffer instanceof SharedArrayBuffer) {
+        return new Uint8Array(buffer);
     }
     else {
         throw new Unreachable;
