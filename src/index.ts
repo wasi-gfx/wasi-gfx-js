@@ -6,11 +6,6 @@ export function createCanvas(): HTMLCanvasElement {
     return new HTMLCanvasElement(key);
 }
 
-// types
-
-// https://webidl.spec.whatwg.org/#ArrayBufferView
-type ArrayBufferView = Int8Array | Int16Array | Int32Array | Uint8Array | Uint16Array | Uint32Array | Uint8ClampedArray | BigInt64Array | BigUint64Array | Float32Array | Float64Array | DataView;
-
 // https://dom.spec.whatwg.org/#interface-eventtarget
 class EventTarget {
     addEventListener(type: string, callback: EventListenerOrEventListenerObject | null, options?: AddEventListenerOptions | boolean): void {
@@ -389,26 +384,26 @@ function convertGpuBindingResourceWebToWasi(resource: GPUBindingResource): gfx.G
 }
 
 function convertBufferToUint8Array(buffer: ArrayBufferView | ArrayBuffer | SharedArrayBuffer): Uint8Array {
-    if (
+    if (buffer instanceof Uint8Array) {
+        return buffer;
+    } else if (
         buffer instanceof Int8Array
         || buffer instanceof Int16Array
         || buffer instanceof Int32Array
-        || buffer instanceof Uint8Array
         || buffer instanceof Uint16Array
         || buffer instanceof Uint32Array
         || buffer instanceof Uint8ClampedArray
         || buffer instanceof BigInt64Array
         || buffer instanceof BigUint64Array
+        // TODO: enable next line if/when Float16Array is supported in StarlingMonkey
+        // || buffer instanceof Float16Array
         || buffer instanceof Float32Array
         || buffer instanceof Float64Array
+        || buffer instanceof DataView
     ) {
         return new Uint8Array(buffer.buffer);
-    } else if (buffer instanceof DataView) {
-        throw new Todo();
-    } else if (buffer instanceof ArrayBuffer) {
-        throw new Todo();
-    } else if (buffer instanceof SharedArrayBuffer) {
-        throw new Todo();
+    } else if (buffer instanceof ArrayBuffer || buffer instanceof SharedArrayBuffer) {
+        return new Uint8Array(buffer);
     } else {
         throw new Unreachable;
     }
@@ -1034,7 +1029,7 @@ export class GPURenderPipeline implements globalThis.GPURenderPipeline {
 
 export class GPUBuffer implements globalThis.GPUBuffer {
     [inner]: gfx.GpuBuffer;
-    _mappedRangeBuffer: Uint8Array | undefined;
+    _mappedRangeBuffer: Uint8Array<ArrayBuffer> | undefined;
     _mappedRangeOffset: bigint | undefined;
     _mappedRangeSize: bigint | undefined;
 
@@ -1077,7 +1072,7 @@ export class GPUBuffer implements globalThis.GPUBuffer {
         offset?: GPUSize64,
         size?: GPUSize64
     ): ArrayBuffer {
-        this._mappedRangeBuffer = this[inner].getMappedRangeGetWithCopy(numToBigIntOptional(offset), numToBigIntOptional(size));
+        this._mappedRangeBuffer = this[inner].getMappedRangeGetWithCopy(numToBigIntOptional(offset), numToBigIntOptional(size)) as Uint8Array<ArrayBuffer>;
         this._mappedRangeOffset = numToBigIntOptional(offset);
         this._mappedRangeSize = numToBigIntOptional(size);
         return this._mappedRangeBuffer.buffer;
@@ -1128,7 +1123,7 @@ export class GPUQueue implements globalThis.GPUQueue {
     writeBuffer(
         buffer: GPUBuffer,
         bufferOffset: GPUSize64,
-        data: ArrayBufferView | ArrayBuffer | SharedArrayBuffer,
+        data: BufferSource | SharedArrayBuffer,
         dataOffset?: GPUSize64,
         size?: GPUSize64
     ): undefined {
@@ -1143,7 +1138,7 @@ export class GPUQueue implements globalThis.GPUQueue {
 
     writeTexture(
         destination: GPUTexelCopyTextureInfo,
-        data: ArrayBufferView | ArrayBuffer | SharedArrayBuffer,
+        data: BufferSource | SharedArrayBuffer,
         dataLayout: GPUTexelCopyBufferLayout,
         size: GPUExtent3D
     ): undefined {
