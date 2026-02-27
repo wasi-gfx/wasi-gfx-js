@@ -532,10 +532,17 @@ export class GPUAdapter {
         let requiredFeatures;
         if (descriptor.requiredFeatures)
             requiredFeatures = Array.from(descriptor.requiredFeatures).map(convertFeatureNameWebToWasi);
+        let requiredLimits;
+        if (descriptor.requiredLimits) {
+            requiredLimits = new gfx.RecordOptionGpuSize64();
+            for (const [key, value] of Object.entries(descriptor.requiredLimits)) {
+                requiredLimits.add(key, numToBigIntOptional(value));
+            }
+        }
         return new GPUDevice(key, this[inner].requestDevice({
             ...descriptor,
             requiredFeatures,
-            requiredLimits: undefined, // TODO:
+            requiredLimits,
         }));
     }
     requestAdapterInfo() {
@@ -545,16 +552,172 @@ export class GPUAdapter {
         return "GPUAdapter";
     }
     get info() {
-        throw new Todo();
+        return new GPUAdapterInfo(key, this[inner].info());
     }
     get features() {
-        throw new Todo();
+        return new GPUSupportedFeatures(key, this[inner].features());
     }
     get limits() {
-        throw new Todo();
+        return new GPUSupportedLimits(key, this[inner].limits());
     }
     get isFallbackAdapter() {
         return this[inner].isFallbackAdapter();
+    }
+}
+export class GPUSupportedFeatures {
+    [inner];
+    constructor(k, i) {
+        privateConstructorCalled(k);
+        this[inner] = i;
+    }
+    get __brand() {
+        return "GPUSupportedFeatures";
+    }
+    get size() {
+        throw new Todo;
+    }
+    has(value) {
+        return this[inner].has(value);
+    }
+    forEach(callbackfn, thisArg) {
+        throw new Todo;
+    }
+    entries() {
+        throw new Todo;
+    }
+    keys() {
+        throw new Todo;
+    }
+    values() {
+        throw new Todo;
+    }
+    [Symbol.iterator]() {
+        throw new Todo;
+    }
+}
+export class GPUSupportedLimits {
+    [inner];
+    constructor(k, i) {
+        privateConstructorCalled(k);
+        this[inner] = i;
+    }
+    get __brand() {
+        return "GPUSupportedLimits";
+    }
+    get maxTextureDimension1D() {
+        return this[inner].maxTextureDimension1D();
+    }
+    get maxTextureDimension2D() {
+        return this[inner].maxTextureDimension2D();
+    }
+    get maxTextureDimension3D() {
+        return this[inner].maxTextureDimension3D();
+    }
+    get maxTextureArrayLayers() {
+        return this[inner].maxTextureArrayLayers();
+    }
+    get maxBindGroups() {
+        return this[inner].maxBindGroups();
+    }
+    get maxBindGroupsPlusVertexBuffers() {
+        return this[inner].maxBindGroupsPlusVertexBuffers();
+    }
+    get maxBindingsPerBindGroup() {
+        return this[inner].maxBindingsPerBindGroup();
+    }
+    get maxDynamicUniformBuffersPerPipelineLayout() {
+        return this[inner].maxDynamicUniformBuffersPerPipelineLayout();
+    }
+    get maxDynamicStorageBuffersPerPipelineLayout() {
+        return this[inner].maxDynamicStorageBuffersPerPipelineLayout();
+    }
+    get maxSampledTexturesPerShaderStage() {
+        return this[inner].maxSampledTexturesPerShaderStage();
+    }
+    get maxSamplersPerShaderStage() {
+        return this[inner].maxSamplersPerShaderStage();
+    }
+    get maxStorageBuffersPerShaderStage() {
+        return this[inner].maxStorageBuffersPerShaderStage();
+    }
+    get maxStorageTexturesPerShaderStage() {
+        return this[inner].maxStorageTexturesPerShaderStage();
+    }
+    get maxUniformBuffersPerShaderStage() {
+        return this[inner].maxUniformBuffersPerShaderStage();
+    }
+    get maxUniformBufferBindingSize() {
+        return bigIntToNum(this[inner].maxUniformBufferBindingSize());
+    }
+    get maxStorageBufferBindingSize() {
+        return bigIntToNum(this[inner].maxStorageBufferBindingSize());
+    }
+    get minUniformBufferOffsetAlignment() {
+        return this[inner].minUniformBufferOffsetAlignment();
+    }
+    get minStorageBufferOffsetAlignment() {
+        return this[inner].minStorageBufferOffsetAlignment();
+    }
+    get maxVertexBuffers() {
+        return this[inner].maxVertexBuffers();
+    }
+    get maxBufferSize() {
+        return bigIntToNum(this[inner].maxBufferSize());
+    }
+    get maxVertexAttributes() {
+        return this[inner].maxVertexAttributes();
+    }
+    get maxVertexBufferArrayStride() {
+        return this[inner].maxVertexBufferArrayStride();
+    }
+    get maxInterStageShaderVariables() {
+        return this[inner].maxInterStageShaderVariables();
+    }
+    get maxColorAttachments() {
+        return this[inner].maxColorAttachments();
+    }
+    get maxColorAttachmentBytesPerSample() {
+        return this[inner].maxColorAttachmentBytesPerSample();
+    }
+    get maxComputeWorkgroupStorageSize() {
+        return this[inner].maxComputeWorkgroupStorageSize();
+    }
+    get maxComputeInvocationsPerWorkgroup() {
+        return this[inner].maxComputeInvocationsPerWorkgroup();
+    }
+    get maxComputeWorkgroupSizeX() {
+        return this[inner].maxComputeWorkgroupSizeX();
+    }
+    get maxComputeWorkgroupSizeY() {
+        return this[inner].maxComputeWorkgroupSizeY();
+    }
+    get maxComputeWorkgroupSizeZ() {
+        return this[inner].maxComputeWorkgroupSizeZ();
+    }
+    get maxComputeWorkgroupsPerDimension() {
+        return this[inner].maxComputeWorkgroupsPerDimension();
+    }
+}
+export class GPUAdapterInfo {
+    [inner];
+    constructor(k, i) {
+        privateConstructorCalled(k);
+        this[inner] = i;
+    }
+    get __brand() {
+        return "GPUAdapterInfo";
+    }
+    get vendor() {
+        return this[inner].vendor();
+    }
+    get architecture() {
+        return this[inner].architecture();
+    }
+    get device() {
+        return this[inner].device();
+    }
+    get description() {
+        return this[inner].description();
     }
 }
 export class GPUDevice extends EventTarget {
@@ -577,16 +740,16 @@ export class GPUDevice extends EventTarget {
         throw new Todo();
     }
     get features() {
-        throw new Todo();
+        return new GPUSupportedFeatures(key, this[inner].features());
     }
     get limits() {
-        throw new Todo();
+        return new GPUSupportedLimits(key, this[inner].limits());
     }
     get queue() {
         return new GPUQueue(key, this[inner].queue());
     }
     get adapterInfo() {
-        throw new Todo();
+        return new GPUAdapterInfo(key, this[inner].adapterInfo());
     }
     destroy() {
         this[inner].destroy();

@@ -570,10 +570,18 @@ export class GPUAdapter implements globalThis.GPUAdapter {
         if (descriptor.requiredFeatures)
             requiredFeatures = Array.from(descriptor.requiredFeatures).map(convertFeatureNameWebToWasi);
 
+        let requiredLimits: gfx.RecordOptionGpuSize64 | undefined;
+        if (descriptor.requiredLimits) {
+            requiredLimits = new gfx.RecordOptionGpuSize64();
+            for (const [key, value] of Object.entries(descriptor.requiredLimits)) {
+                requiredLimits.add(key, numToBigIntOptional(value));
+            }
+        }
+
         return new GPUDevice(key, this[inner].requestDevice({
             ...descriptor,
             requiredFeatures,
-            requiredLimits: undefined, // TODO:
+            requiredLimits,
         }));
     }
 
@@ -586,19 +594,181 @@ export class GPUAdapter implements globalThis.GPUAdapter {
     }
 
     get info(): GPUAdapterInfo {
-        throw new Todo();
+        return new GPUAdapterInfo(key, this[inner].info());
     }
 
     get features(): GPUSupportedFeatures {
-        throw new Todo();
+        return new GPUSupportedFeatures(key, this[inner].features());
     }
 
     get limits(): GPUSupportedLimits {
-        throw new Todo();
+        return new GPUSupportedLimits(key, this[inner].limits());
     }
 
     get isFallbackAdapter(): boolean {
         return this[inner].isFallbackAdapter();
+    }
+}
+
+export class GPUSupportedFeatures implements globalThis.GPUSupportedFeatures {
+    [inner]: gfx.GpuSupportedFeatures;
+    constructor(k: symbol, i: gfx.GpuSupportedFeatures) {
+        privateConstructorCalled(k);
+        this[inner] = i;
+    }
+    get __brand(): 'GPUSupportedFeatures' {
+        return "GPUSupportedFeatures";
+    }
+    get size(): number {
+        throw new Todo;
+    }
+    has(value: string): boolean {
+        return this[inner].has(value);
+    }
+    forEach(callbackfn: (value: string, value2: string, set: ReadonlySet<string>) => void, thisArg?: any): void {
+        throw new Todo;
+    }
+    entries(): SetIterator<[string, string]> {
+        throw new Todo;
+    }
+    keys(): SetIterator<string> {
+        throw new Todo;
+    }
+    values(): SetIterator<string> {
+        throw new Todo;
+    }
+    [Symbol.iterator](): SetIterator<string> {
+        throw new Todo;
+    }
+}
+
+export class GPUSupportedLimits implements globalThis.GPUSupportedLimits {
+    [inner]: gfx.GpuSupportedLimits;
+
+    constructor(k: symbol, i: gfx.GpuSupportedLimits) {
+        privateConstructorCalled(k);
+        this[inner] = i;
+    }
+
+    get __brand(): 'GPUSupportedLimits' {
+        return "GPUSupportedLimits";
+    }
+
+    get maxTextureDimension1D(): number {
+        return this[inner].maxTextureDimension1D();
+    }
+    get maxTextureDimension2D(): number {
+        return this[inner].maxTextureDimension2D();
+    }
+    get maxTextureDimension3D(): number {
+        return this[inner].maxTextureDimension3D();
+    }
+    get maxTextureArrayLayers(): number {
+        return this[inner].maxTextureArrayLayers();
+    }
+    get maxBindGroups(): number {
+        return this[inner].maxBindGroups();
+    }
+    get maxBindGroupsPlusVertexBuffers(): number {
+        return this[inner].maxBindGroupsPlusVertexBuffers();
+    }
+    get maxBindingsPerBindGroup(): number {
+        return this[inner].maxBindingsPerBindGroup();
+    }
+    get maxDynamicUniformBuffersPerPipelineLayout(): number {
+        return this[inner].maxDynamicUniformBuffersPerPipelineLayout();
+    }
+    get maxDynamicStorageBuffersPerPipelineLayout(): number {
+        return this[inner].maxDynamicStorageBuffersPerPipelineLayout();
+    }
+    get maxSampledTexturesPerShaderStage(): number {
+        return this[inner].maxSampledTexturesPerShaderStage();
+    }
+    get maxSamplersPerShaderStage(): number {
+        return this[inner].maxSamplersPerShaderStage();
+    }
+    get maxStorageBuffersPerShaderStage(): number {
+        return this[inner].maxStorageBuffersPerShaderStage();
+    }
+    get maxStorageTexturesPerShaderStage(): number {
+        return this[inner].maxStorageTexturesPerShaderStage();
+    }
+    get maxUniformBuffersPerShaderStage(): number {
+        return this[inner].maxUniformBuffersPerShaderStage();
+    }
+    get maxUniformBufferBindingSize(): number {
+        return bigIntToNum(this[inner].maxUniformBufferBindingSize());
+    }
+    get maxStorageBufferBindingSize(): number {
+        return bigIntToNum(this[inner].maxStorageBufferBindingSize());
+    }
+    get minUniformBufferOffsetAlignment(): number {
+        return this[inner].minUniformBufferOffsetAlignment();
+    }
+    get minStorageBufferOffsetAlignment(): number {
+        return this[inner].minStorageBufferOffsetAlignment();
+    }
+    get maxVertexBuffers(): number {
+        return this[inner].maxVertexBuffers();
+    }
+    get maxBufferSize(): number {
+        return bigIntToNum(this[inner].maxBufferSize());
+    }
+    get maxVertexAttributes(): number {
+        return this[inner].maxVertexAttributes();
+    }
+    get maxVertexBufferArrayStride(): number {
+        return this[inner].maxVertexBufferArrayStride();
+    }
+    get maxInterStageShaderVariables(): number {
+        return this[inner].maxInterStageShaderVariables();
+    }
+    get maxColorAttachments(): number {
+        return this[inner].maxColorAttachments();
+    }
+    get maxColorAttachmentBytesPerSample(): number {
+        return this[inner].maxColorAttachmentBytesPerSample();
+    }
+    get maxComputeWorkgroupStorageSize(): number {
+        return this[inner].maxComputeWorkgroupStorageSize();
+    }
+    get maxComputeInvocationsPerWorkgroup(): number {
+        return this[inner].maxComputeInvocationsPerWorkgroup();
+    }
+    get maxComputeWorkgroupSizeX(): number {
+        return this[inner].maxComputeWorkgroupSizeX();
+    }
+    get maxComputeWorkgroupSizeY(): number {
+        return this[inner].maxComputeWorkgroupSizeY();
+    }
+    get maxComputeWorkgroupSizeZ(): number {
+        return this[inner].maxComputeWorkgroupSizeZ();
+    }
+    get maxComputeWorkgroupsPerDimension(): number {
+        return this[inner].maxComputeWorkgroupsPerDimension();
+    }
+}
+
+export class GPUAdapterInfo implements globalThis.GPUAdapterInfo {
+    [inner]: gfx.GpuAdapterInfo;
+    constructor(k: symbol, i: gfx.GpuAdapterInfo) {
+        privateConstructorCalled(k);
+        this[inner] = i;
+    }
+    get __brand(): 'GPUAdapterInfo' {
+        return "GPUAdapterInfo";
+    }
+    get vendor(): string {
+        return this[inner].vendor();
+    }
+    get architecture(): string {
+        return this[inner].architecture();
+    }
+    get device(): string {
+        return this[inner].device();
+    }
+    get description(): string {
+        return this[inner].description();
     }
 }
 
@@ -623,16 +793,16 @@ export class GPUDevice extends EventTarget implements globalThis.GPUDevice {
         throw new Todo();
     }
     get features(): GPUSupportedFeatures {
-        throw new Todo();
+        return new GPUSupportedFeatures(key, this[inner].features());
     }
     get limits(): GPUSupportedLimits {
-        throw new Todo();
+        return new GPUSupportedLimits(key, this[inner].limits());
     }
     get queue(): GPUQueue {
         return new GPUQueue(key, this[inner].queue());
     }
     get adapterInfo(): GPUAdapterInfo {
-        throw new Todo();
+        return new GPUAdapterInfo(key, this[inner].adapterInfo());
     }
 
     destroy(): undefined {
