@@ -1,4 +1,4 @@
-import { getGpu, GPU, GPUAdapter, GPUDevice, GPUQueue, GPUBuffer, GPUBufferUsage, GPUMapMode, GPUTextureUsage, GPUTexture, GPUTextureView, GPUSampler, GPUBindGroupLayout, GPUPipelineLayout, GPUBindGroup, GPUShaderModule, GPUShaderStage, GPUComputePipeline, GPURenderPipeline, GPUColorWrite, GPUCommandEncoder, GPURenderPassEncoder, GPUComputePassEncoder, GPUCommandBuffer, GPUQuerySet } from "../src/index";
+import { getGpu, GPU, GPUAdapter, GPUDevice, GPUQueue, GPUBuffer, GPUBufferUsage, GPUMapMode, GPUTextureUsage, GPUTexture, GPUTextureView, GPUSampler, GPUBindGroupLayout, GPUPipelineLayout, GPUBindGroup, GPUShaderModule, GPUShaderStage, GPUComputePipeline, GPURenderPipeline, GPUColorWrite, GPUCommandEncoder, GPURenderPassEncoder, GPUComputePassEncoder, GPUCommandBuffer, GPUQuerySet } from "./webgpu";
 
 class Navigator implements Pick<globalThis.Navigator, "gpu"> {
   gpu: GPU;

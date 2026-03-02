@@ -1,4 +1,4 @@
-import { getGpu, GPUBufferUsage, GPUMapMode } from "../src/index";
+import { getGpu, GPUBufferUsage, GPUMapMode } from "../src/webgpu";
 
 export const run = {
     async run() {

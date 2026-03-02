@@ -1,6 +1,7 @@
 // TODO: broken because of https://github.com/bytecodealliance/ComponentizeJS/issues/221
 
-import { createCanvas, getGpu } from "../src/index";
+import { getGpu } from "../src/webgpu";
+import { createCanvas } from "../src/canvas";
 
 export const run = {
     async run() {
