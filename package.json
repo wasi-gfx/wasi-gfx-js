@@ -2,7 +2,20 @@
     "name": "@wasi-gfx/js-webgpu",
     "version": "0.1.0",
     "description": "WebGPU JavaScript API on top of wasi-gfx",
-    "main": "dist/index.js",
+    "exports": {
+        "./canvas": {
+            "types": "./dist/canvas.d.ts",
+            "default": "./dist/canvas.js"
+        },
+        "./webgpu": {
+            "types": "./dist/webgpu.d.ts",
+            "default": "./dist/webgpu.js"
+        },
+        "./globals": {
+            "types": "./dist/globals.d.ts",
+            "default": "./dist/globals.js"
+        }
+    },
     "files": [
         "dist/",
         "wit/",
