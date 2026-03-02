@@ -1,4 +1,7 @@
 {
+    "name": "wasi-gfx-js",
+    "version": "0.1.0",
+    "description": "WebGPU JavaScript API on top of wasi-gfx",
     "main": "index.js",
     "type": "module",
     "scripts": {
