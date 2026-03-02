@@ -3,6 +3,7 @@
     "type": "module",
     "scripts": {
         "build": "cd src && tsc",
+        "check": "cd src && tsc --noEmit && cd ../examples && tsc --noEmit",
         "test": "npm run test:generate-spec-list && npm run test:rollup && npm run test:jco && echo 'Test wasm built but not run temp/tests.wasm'",
         "test:generate-spec-list": "node tests/generate-spec-list.js",
         "test:rollup": "rollup --config './tests/rollup.config.js'",
