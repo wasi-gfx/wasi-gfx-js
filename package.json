@@ -2,7 +2,12 @@
     "name": "@wasi-gfx/js-webgpu",
     "version": "0.1.0",
     "description": "WebGPU JavaScript API on top of wasi-gfx",
-    "main": "index.js",
+    "main": "dist/index.js",
+    "files": [
+        "dist/",
+        "wit/",
+        "types/"
+    ],
     "type": "module",
     "scripts": {
         "build": "cd src && tsc",
