@@ -24,7 +24,7 @@
     "repository": {
         "type": "git",
         "url": "git+https://github.com/wasi-gfx/wasi-gfx-js.git"
-    }
+    },
     "type": "module",
     "scripts": {
         "build": "cd src && tsc",
