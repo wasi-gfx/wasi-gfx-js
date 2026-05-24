@@ -1009,8 +1009,53 @@ export class GPUShaderModule implements globalThis.GPUShaderModule {
         this[inner].setLabel(value);
     }
 
-    getCompilationInfo(): Promise<GPUCompilationInfo> {
-        throw new Todo();
+    async getCompilationInfo(): Promise<GPUCompilationInfo> {
+        return new GPUCompilationInfo(key, this[inner].getCompilationInfo());
+    }
+}
+
+export class GPUCompilationInfo implements globalThis.GPUCompilationInfo {
+    [inner]: gfx.GpuCompilationInfo;
+
+    constructor(k: symbol, i: gfx.GpuCompilationInfo) {
+        privateConstructorCalled(k);
+        this[inner] = i;
+    }
+    get __brand(): 'GPUCompilationInfo' {
+        return 'GPUCompilationInfo';
+    }
+    get messages(): GPUCompilationMessage[] {
+        return this[inner].messages().map(m => new GPUCompilationMessage(key, m));
+    }
+}
+
+export class GPUCompilationMessage implements globalThis.GPUCompilationMessage {
+    [inner]: gfx.GpuCompilationMessage;
+
+    constructor(k: symbol, i: gfx.GpuCompilationMessage) {
+        privateConstructorCalled(k);
+        this[inner] = i;
+    }
+    get __brand(): 'GPUCompilationMessage' {
+        return 'GPUCompilationMessage';
+    }
+    get message(): string {
+        return this[inner].message();
+    }
+    get type(): GPUCompilationMessageType {
+        return this[inner].type();
+    }
+    get lineNum(): number {
+        return bigIntToNum(this[inner].lineNum());
+    }
+    get linePos(): number {
+        return bigIntToNum(this[inner].linePos());
+    }
+    get offset(): number {
+        return bigIntToNum(this[inner].offset());
+    }
+    get length(): number {
+        return bigIntToNum(this[inner].length());
     }
 }
 
