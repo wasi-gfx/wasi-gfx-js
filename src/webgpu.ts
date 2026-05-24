@@ -400,6 +400,7 @@ export class GPU implements globalThis.GPU {
 
 export class GPUAdapter implements globalThis.GPUAdapter {
     [inner]: gfx.GpuAdapter;
+    #info: GPUAdapterInfo | undefined;
 
     constructor(k: symbol, i: gfx.GpuAdapter) {
         privateConstructorCalled(k);
@@ -435,7 +436,12 @@ export class GPUAdapter implements globalThis.GPUAdapter {
     }
 
     get info(): GPUAdapterInfo {
-        return new GPUAdapterInfo(key, this[inner].info());
+        // From the spec:
+        // > The same object is returned each time. To create that object for the first time:
+        // https://www.w3.org/TR/webgpu/#dom-gpuadapter-info
+        if(!this.#info)
+            this.#info = new GPUAdapterInfo(key, this[inner].info());
+        return this.#info;
     }
 
     get features(): GPUSupportedFeatures {
@@ -615,6 +621,7 @@ export class GPUAdapterInfo implements globalThis.GPUAdapterInfo {
 
 export class GPUDevice extends EventTarget implements globalThis.GPUDevice {
     [inner]: gfx.GpuDevice;
+    #adapterInfo: GPUAdapterInfo | undefined;
 
     constructor(k: symbol, i: gfx.GpuDevice) {
         privateConstructorCalled(k);
@@ -643,7 +650,12 @@ export class GPUDevice extends EventTarget implements globalThis.GPUDevice {
         return new GPUQueue(key, this[inner].queue());
     }
     get adapterInfo(): GPUAdapterInfo {
-        return new GPUAdapterInfo(key, this[inner].adapterInfo());
+        // From the spec:
+        // > The same object is returned each time. To create that object for the first time:
+        // https://www.w3.org/TR/webgpu/#dom-gpudevice-adapterinfo
+        if(!this.#adapterInfo)
+            this.#adapterInfo = new GPUAdapterInfo(key, this[inner].adapterInfo());
+        return this.#adapterInfo;
     }
 
     destroy(): undefined {
