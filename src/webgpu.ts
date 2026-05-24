@@ -722,7 +722,15 @@ export class GPUDevice extends EventTarget implements globalThis.GPUDevice {
     createPipelineLayout(descriptor: GPUPipelineLayoutDescriptor): GPUPipelineLayout {
         return new GPUPipelineLayout(key, this[inner].createPipelineLayout({
             ...descriptor,
-            bindGroupLayouts: Array.from(descriptor.bindGroupLayouts).map(b => (b as GPUBindGroupLayout)[inner])
+            bindGroupLayouts: Array.from(descriptor.bindGroupLayouts).map(bindGroup => {
+                if(bindGroup instanceof GPUBindGroupLayout) {
+                    return bindGroup[inner];
+                } else if (bindGroup === null || bindGroup === undefined) {
+                    return undefined;
+                } else {
+                    throw new Unreachable;
+                }
+            }),
         }));
     }
 
