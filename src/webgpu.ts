@@ -255,7 +255,7 @@ function convertGpuLayoutWasiToWeb(layout: gfx.GpuLayoutMode): GPUPipelineLayout
     throw new Todo;
 }
 
-function convertColorWebToWasi(color: globalThis.GPUColor): gfx.GpuColor {
+function convertColorWebToWasi(color: GPUColor): gfx.GpuColor {
     // https://www.w3.org/TR/webgpu/#colors-and-vectors
     if (Symbol.iterator in color) {
         const iter = color[Symbol.iterator]();
@@ -315,25 +315,24 @@ function convertGpuBindingResourceWebToWasi(resource: GPUBindingResource): gfx.G
     if (resource instanceof GPUSampler) {
         return {
             tag: 'gpu-sampler',
-            val: (resource as GPUSampler)[inner],
+            val: resource[inner],
         };
     } else if (resource instanceof GPUTextureView) {
         throw new Todo;
-    } else if ((resource as GPUBufferBinding).buffer) {
-        let bufferBinding = resource as GPUBufferBinding;
+    } else if ('buffer' in resource && resource.buffer instanceof GPUBuffer) {
         let offsetBitInt: bigint | undefined;
-        if (typeof bufferBinding.offset === "number")
-            offsetBitInt = numToBigInt(bufferBinding.offset);
+        if (typeof resource.offset === "number")
+            offsetBitInt = numToBigInt(resource.offset);
         let sizeBitInt: bigint | undefined;
-        if (typeof bufferBinding.size === "number")
-            sizeBitInt = numToBigInt(bufferBinding.size);
+        if (typeof resource.size === "number")
+            sizeBitInt = numToBigInt(resource.size);
         return {
             tag: 'gpu-buffer-binding',
             val: {
                 ...resource,
                 size: sizeBitInt,
                 offset: offsetBitInt,
-                buffer: (bufferBinding.buffer as GPUBuffer)[inner],
+                buffer: resource.buffer[inner],
             }
         };
     } else {
@@ -912,14 +911,17 @@ export class GPURenderBundleEncoder implements globalThis.GPURenderBundleEncoder
     setBindGroup(index: unknown, bindGroup: unknown, dynamicOffsetsData?: unknown, dynamicOffsetsDataStart?: unknown, dynamicOffsetsDataLength?: unknown): undefined {
         throw new Todo;
     }
-    setPipeline(pipeline: globalThis.GPURenderPipeline): undefined {
-        this[inner].setPipeline((pipeline as GPURenderPipeline)[inner]);
+    setPipeline(pipeline: GPURenderPipeline): undefined {
+        this[inner].setPipeline(pipeline[inner]);
     }
-    setIndexBuffer(buffer: globalThis.GPUBuffer, indexFormat: GPUIndexFormat, offset?: GPUSize64, size?: GPUSize64): undefined {
-        this[inner].setIndexBuffer((buffer as GPUBuffer)[inner], indexFormat, numToBigIntOptional(offset), numToBigIntOptional(size));
+    setIndexBuffer(buffer: GPUBuffer, indexFormat: GPUIndexFormat, offset?: GPUSize64, size?: GPUSize64): undefined {
+        this[inner].setIndexBuffer(buffer[inner], indexFormat, numToBigIntOptional(offset), numToBigIntOptional(size));
     }
-    setVertexBuffer(slot: GPUIndex32, buffer: globalThis.GPUBuffer | null | undefined, offset?: GPUSize64, size?: GPUSize64): undefined {
-        this[inner].setVertexBuffer(slot, (buffer as GPUBuffer)[inner], numToBigIntOptional(offset), numToBigIntOptional(size));
+    setVertexBuffer(slot: GPUIndex32, buffer: GPUBuffer | null | undefined, offset?: GPUSize64, size?: GPUSize64): undefined {
+        let gfxBuffer: gfx.GpuBuffer | undefined;
+        if (buffer)
+            gfxBuffer = buffer[inner];
+        this[inner].setVertexBuffer(slot, gfxBuffer, numToBigIntOptional(offset), numToBigIntOptional(size));
     }
     draw(vertexCount: GPUSize32, instanceCount?: GPUSize32, firstVertex?: GPUSize32, firstInstance?: GPUSize32): undefined {
         this[inner].draw(vertexCount, instanceCount, firstVertex, firstInstance);
@@ -927,11 +929,11 @@ export class GPURenderBundleEncoder implements globalThis.GPURenderBundleEncoder
     drawIndexed(indexCount: GPUSize32, instanceCount?: GPUSize32, firstIndex?: GPUSize32, baseVertex?: GPUSignedOffset32, firstInstance?: GPUSize32): undefined {
         this[inner].drawIndexed(indexCount, instanceCount, firstIndex, baseVertex, firstInstance);
     }
-    drawIndirect(indirectBuffer: globalThis.GPUBuffer, indirectOffset: GPUSize64): undefined {
-        this[inner].drawIndirect((indirectBuffer as GPUBuffer)[inner], numToBigInt(indirectOffset));
+    drawIndirect(indirectBuffer: GPUBuffer, indirectOffset: GPUSize64): undefined {
+        this[inner].drawIndirect(indirectBuffer[inner], numToBigInt(indirectOffset));
     }
-    drawIndexedIndirect(indirectBuffer: globalThis.GPUBuffer, indirectOffset: GPUSize64): undefined {
-        this[inner].drawIndexedIndirect((indirectBuffer as GPUBuffer)[inner], numToBigInt(indirectOffset));
+    drawIndexedIndirect(indirectBuffer: GPUBuffer, indirectOffset: GPUSize64): undefined {
+        this[inner].drawIndexedIndirect(indirectBuffer[inner], numToBigInt(indirectOffset));
     }
 }
 
@@ -1295,7 +1297,7 @@ export class GPUTexture implements globalThis.GPUTexture {
     get usage(): number {
         return this[inner].usage();
     }
-    createView(descriptor?: GPUTextureViewDescriptor): globalThis.GPUTextureView {
+    createView(descriptor?: GPUTextureViewDescriptor): GPUTextureView {
         let gfxDescriptor: gfx.GpuTextureViewDescriptor | undefined;
         if (descriptor) {
             let format: gfx.GpuTextureFormat | undefined;
@@ -1437,8 +1439,8 @@ export class GPUCommandEncoder implements globalThis.GPUCommandEncoder {
             numToBigIntOptional(size),
         );
     }
-    resolveQuerySet(querySet: GPUQuerySet, firstQuery: GPUSize32, queryCount: GPUSize32, destination: globalThis.GPUBuffer, destinationOffset: GPUSize64): undefined {
-        this[inner].resolveQuerySet((querySet as GPUQuerySet)[inner], firstQuery, queryCount, (destination as GPUBuffer)[inner], numToBigInt(destinationOffset));
+    resolveQuerySet(querySet: GPUQuerySet, firstQuery: GPUSize32, queryCount: GPUSize32, destination: GPUBuffer, destinationOffset: GPUSize64): undefined {
+        this[inner].resolveQuerySet(querySet[inner], firstQuery, queryCount, destination[inner], numToBigInt(destinationOffset));
     }
     finish(descriptor?: GPUCommandBufferDescriptor): GPUCommandBuffer {
         return new GPUCommandBuffer(key, this[inner].finish(descriptor));
@@ -1550,7 +1552,7 @@ export class GPURenderPassEncoder implements globalThis.GPURenderPassEncoder {
         this[inner].endOcclusionQuery();
     }
     executeBundles(bundles: Iterable<GPURenderBundle>): undefined {
-        this[inner].executeBundles(Array.from(bundles).map(bundle => (bundle as GPURenderBundle)[inner]));
+        this[inner].executeBundles(Array.from(bundles).map(bundle => bundle[inner]));
     }
     end(): undefined {
         this[inner].end();
@@ -1568,7 +1570,7 @@ export class GPURenderPassEncoder implements globalThis.GPURenderPassEncoder {
         throw new Todo;
     }
     setPipeline(pipeline: GPURenderPipeline): undefined {
-        this[inner].setPipeline((pipeline as GPURenderPipeline)[inner]);
+        this[inner].setPipeline(pipeline[inner]);
     }
     setIndexBuffer(buffer: GPUBuffer, indexFormat: GPUIndexFormat, offset?: GPUSize64, size?: GPUSize64): undefined {
         this[inner].setIndexBuffer(
