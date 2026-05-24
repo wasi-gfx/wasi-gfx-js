@@ -318,7 +318,10 @@ function convertGpuBindingResourceWebToWasi(resource: GPUBindingResource): gfx.G
             val: resource[inner],
         };
     } else if (resource instanceof GPUTextureView) {
-        throw new Todo;
+        return {
+            tag: 'gpu-texture-view',
+            val: resource[inner],
+        };
     } else if ('buffer' in resource && resource.buffer instanceof GPUBuffer) {
         let offsetBitInt: bigint | undefined;
         if (typeof resource.offset === "number")
