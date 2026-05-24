@@ -856,12 +856,20 @@ export class GPUDevice extends EventTarget implements globalThis.GPUDevice {
         }));
     }
 
-    async createComputePipelineAsync(_descriptor: GPUComputePipelineDescriptor): Promise<GPUComputePipeline> {
-        throw new Todo();
+    async createComputePipelineAsync(descriptor: GPUComputePipelineDescriptor): Promise<GPUComputePipeline> {
+        // TODO: make this really async
+        await Promise.resolve();
+        const result = this.createComputePipeline(descriptor);
+        await Promise.resolve();
+        return result;
     }
 
     async createRenderPipelineAsync(descriptor: GPURenderPipelineDescriptor): Promise<GPURenderPipeline> {
-        throw new Todo();
+        // TODO: make this really async
+        await Promise.resolve();
+        const result = this.createRenderPipeline(descriptor);
+        await Promise.resolve();
+        return result;
     }
 
     createCommandEncoder(descriptor: GPUCommandEncoderDescriptor = {}): GPUCommandEncoder {
