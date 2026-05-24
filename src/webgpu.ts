@@ -882,7 +882,14 @@ export class GPUDevice extends EventTarget implements globalThis.GPUDevice {
     }
 
     async popErrorScope(): Promise<GPUError | null> {
-        throw new Todo();
+        const err = this[inner].popErrorScope();
+        if(err) {
+            return {
+                message: err.message(),
+            };
+        } else {
+            return null;
+        }
     }
 
     importExternalTexture(descriptor: GPUExternalTextureDescriptor): GPUExternalTexture {
