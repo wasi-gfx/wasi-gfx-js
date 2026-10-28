@@ -1,5 +1,77 @@
-import * as gfx from 'wasi:webgpu/webgpu@0.0.1';
-import { inner, key, privateConstructorCalled, Todo, Unreachable, EventTarget } from './common';
+import * as gfx from 'wasi:webgpu/webgpu@0.3.0-rc.2';
+import { EventTarget, inner, key, privateConstructorCalled, Todo, Unreachable } from './common';
+
+// flags converters: the web API uses numeric bitflags, wasi uses flag records.
+function convertBufferUsageWebToWasi(usage: number): gfx.GpuBufferUsage {
+    return {
+        mapRead: !!(usage & GPUBufferUsage.MAP_READ),
+        mapWrite: !!(usage & GPUBufferUsage.MAP_WRITE),
+        copySrc: !!(usage & GPUBufferUsage.COPY_SRC),
+        copyDst: !!(usage & GPUBufferUsage.COPY_DST),
+        index: !!(usage & GPUBufferUsage.INDEX),
+        vertex: !!(usage & GPUBufferUsage.VERTEX),
+        uniform: !!(usage & GPUBufferUsage.UNIFORM),
+        storage: !!(usage & GPUBufferUsage.STORAGE),
+        indirect: !!(usage & GPUBufferUsage.INDIRECT),
+        queryResolve: !!(usage & GPUBufferUsage.QUERY_RESOLVE),
+    };
+}
+function convertBufferUsageWasiToWeb(usage: gfx.GpuBufferUsage): number {
+    let n = 0;
+    if (usage.mapRead) n |= GPUBufferUsage.MAP_READ;
+    if (usage.mapWrite) n |= GPUBufferUsage.MAP_WRITE;
+    if (usage.copySrc) n |= GPUBufferUsage.COPY_SRC;
+    if (usage.copyDst) n |= GPUBufferUsage.COPY_DST;
+    if (usage.index) n |= GPUBufferUsage.INDEX;
+    if (usage.vertex) n |= GPUBufferUsage.VERTEX;
+    if (usage.uniform) n |= GPUBufferUsage.UNIFORM;
+    if (usage.storage) n |= GPUBufferUsage.STORAGE;
+    if (usage.indirect) n |= GPUBufferUsage.INDIRECT;
+    if (usage.queryResolve) n |= GPUBufferUsage.QUERY_RESOLVE;
+    return n;
+}
+export function convertTextureUsageWebToWasi(usage: number): gfx.GpuTextureUsage {
+    return {
+        copySrc: !!(usage & GPUTextureUsage.COPY_SRC),
+        copyDst: !!(usage & GPUTextureUsage.COPY_DST),
+        textureBinding: !!(usage & GPUTextureUsage.TEXTURE_BINDING),
+        storageBinding: !!(usage & GPUTextureUsage.STORAGE_BINDING),
+        renderAttachment: !!(usage & GPUTextureUsage.RENDER_ATTACHMENT),
+        transientAttachment: !!(usage & GPUTextureUsage.TRANSIENT_ATTACHMENT),
+    };
+}
+function convertTextureUsageWasiToWeb(usage: gfx.GpuTextureUsage): number {
+    let n = 0;
+    if (usage.copySrc) n |= GPUTextureUsage.COPY_SRC;
+    if (usage.copyDst) n |= GPUTextureUsage.COPY_DST;
+    if (usage.textureBinding) n |= GPUTextureUsage.TEXTURE_BINDING;
+    if (usage.storageBinding) n |= GPUTextureUsage.STORAGE_BINDING;
+    if (usage.renderAttachment) n |= GPUTextureUsage.RENDER_ATTACHMENT;
+    if (usage.transientAttachment) n |= GPUTextureUsage.TRANSIENT_ATTACHMENT;
+    return n;
+}
+function convertShaderStageWebToWasi(visibility: number): gfx.GpuShaderStage {
+    return {
+        vertex: !!(visibility & GPUShaderStage.VERTEX),
+        fragment: !!(visibility & GPUShaderStage.FRAGMENT),
+        compute: !!(visibility & GPUShaderStage.COMPUTE),
+    };
+}
+function convertColorWriteWebToWasi(mask: number): gfx.GpuColorWrite {
+    return {
+        red: !!(mask & GPUColorWrite.RED),
+        green: !!(mask & GPUColorWrite.GREEN),
+        blue: !!(mask & GPUColorWrite.BLUE),
+        alpha: !!(mask & GPUColorWrite.ALPHA),
+        all: (mask & GPUColorWrite.ALL) === GPUColorWrite.ALL,
+    };
+}
+function convertMapModeWebToWasi(mode: number): gfx.GpuMapMode {
+    return {
+        read: !!(mode & GPUMapMode.READ),
+        write: !!(mode & GPUMapMode.WRITE),
+    };
+}
 
 // converters
 
@@ -22,12 +94,14 @@ function bigIntToNumOptional(n: bigint | undefined): number | undefined {
 function convertFeatureNameWebToWasi(name: GPUFeatureName): gfx.GpuFeatureName {
     if (name === "texture-compression-bc-sliced-3d")
         return "texture-compression-bc-sliced3d";
-    if (name === "texture-compression-astc-sliced-3d" || name === "float32-blendable")
+    if (name === "texture-compression-astc-sliced-3d")
+        return "texture-compression-astc-sliced3d";
+    if (name === "subgroup-size-control" || name === "texture-compression-unaligned" || name === "atomic-vec2u-min-max")
         throw new Todo;
     return name;
 }
 
-function convertTextureFormatWebToWasi(name: GPUTextureFormat): gfx.GpuTextureFormat {
+export function convertTextureFormatWebToWasi(name: GPUTextureFormat): gfx.GpuTextureFormat {
     switch (name) {
         case "astc-4x4-unorm":
             return "astc4x4-unorm";
@@ -157,16 +231,7 @@ function convertVertexFormatWebToWasi(name: GPUVertexFormat): gfx.GpuVertexForma
     switch (name) {
         case "unorm10-10-10-2":
             return "unorm1010102"
-        case "uint8":
-        case "sint8":
-        case "unorm8":
-        case "snorm8":
-        case "uint16":
-        case "sint16":
-        case "unorm16":
-        case "snorm16":
-        case "float16":
-        case "unorm8x4-bgra":
+        case "snorm10-10-10-2":
             throw new Todo;
         default:
             return name;
@@ -420,7 +485,7 @@ export class GPUAdapter implements globalThis.GPUAdapter {
             }
         }
 
-        return new GPUDevice(key, this[inner].requestDevice({
+        return new GPUDevice(key, await this[inner].requestDevice({
             ...descriptor,
             requiredFeatures,
             requiredLimits,
@@ -450,10 +515,6 @@ export class GPUAdapter implements globalThis.GPUAdapter {
 
     get limits(): GPUSupportedLimits {
         return new GPUSupportedLimits(key, this[inner].limits());
-    }
-
-    get isFallbackAdapter(): boolean {
-        return this[inner].isFallbackAdapter();
     }
 }
 
@@ -518,6 +579,9 @@ export class GPUSupportedLimits implements globalThis.GPUSupportedLimits {
     }
     get maxBindGroupsPlusVertexBuffers(): number {
         return this[inner].maxBindGroupsPlusVertexBuffers();
+    }
+    get maxImmediateSize(): number {
+        return this[inner].maxImmediateSize();
     }
     get maxBindingsPerBindGroup(): number {
         return this[inner].maxBindingsPerBindGroup();
@@ -617,6 +681,9 @@ export class GPUAdapterInfo implements globalThis.GPUAdapterInfo {
     get description(): string {
         return this[inner].description();
     }
+    get isFallbackAdapter(): boolean {
+        return this[inner].isFallbackAdapter();
+    }
 }
 
 export class GPUDevice extends EventTarget implements globalThis.GPUDevice {
@@ -666,6 +733,7 @@ export class GPUDevice extends EventTarget implements globalThis.GPUDevice {
         return new GPUBuffer(key, this[inner].createBuffer({
             ...descriptor,
             size: numToBigInt(descriptor.size),
+            usage: convertBufferUsageWebToWasi(descriptor.usage),
         }));
     }
 
@@ -676,12 +744,17 @@ export class GPUDevice extends EventTarget implements globalThis.GPUDevice {
         let viewFormats: gfx.GpuTextureFormat[] | undefined;
         if(descriptor.viewFormats)
             viewFormats = Array.from(descriptor.viewFormats).map(f => convertTextureFormatWebToWasi(f));
+        let textureBindingViewDimension: gfx.GpuTextureViewDimension | undefined;
+        if(descriptor.textureBindingViewDimension)
+            textureBindingViewDimension = convertTextureViewDimensionWebToWasi(descriptor.textureBindingViewDimension);
         return new GPUTexture(key, this[inner].createTexture({
             ...descriptor,
             size: convertExtent3DWebToWasi(descriptor.size),
             format: convertTextureFormatWebToWasi(descriptor.format),
+            usage: convertTextureUsageWebToWasi(descriptor.usage),
             dimension,
             viewFormats,
+            textureBindingViewDimension,
         }));
     }
 
@@ -723,6 +796,7 @@ export class GPUDevice extends EventTarget implements globalThis.GPUDevice {
                 }
                 return {
                     ...entry,
+                    visibility: convertShaderStageWebToWasi(entry.visibility),
                     buffer,
                     texture,
                     storageTexture,
@@ -762,7 +836,7 @@ export class GPUDevice extends EventTarget implements globalThis.GPUDevice {
     createShaderModule(descriptor: GPUShaderModuleDescriptor) {
         let compilationHints: gfx.GpuShaderModuleCompilationHint[] | undefined;
         if (descriptor.compilationHints) {
-            compilationHints = descriptor.compilationHints.map(hint => {
+            compilationHints = Array.from(descriptor.compilationHints).map(hint => {
                 let layout: gfx.GpuLayoutMode | undefined;
                 if (hint.layout) {
                     layout = convertGpuLayoutWebToWasi(hint.layout);
@@ -836,9 +910,13 @@ export class GPUDevice extends EventTarget implements globalThis.GPUDevice {
                 module: (descriptor.fragment.module as GPUShaderModule)[inner],
                 targets: Array.from(descriptor.fragment.targets).map(target => {
                     if (target) {
+                        let writeMask: gfx.GpuColorWrite | undefined;
+                        if (target.writeMask !== undefined)
+                            writeMask = convertColorWriteWebToWasi(target.writeMask);
                         return {
                             ...target,
                             format: convertTextureFormatWebToWasi(target.format),
+                            writeMask,
                         };
                     } else {
                         return undefined;
@@ -902,7 +980,7 @@ export class GPUDevice extends EventTarget implements globalThis.GPUDevice {
     }
 
     async popErrorScope(): Promise<GPUError | null> {
-        const err = this[inner].popErrorScope();
+        const err = await this[inner].popErrorScope();
         if(err) {
             return {
                 message: err.message(),
@@ -924,6 +1002,14 @@ export class GPURenderBundleEncoder implements globalThis.GPURenderBundleEncoder
     constructor(k: symbol, i: gfx.GpuRenderBundleEncoder) {
         privateConstructorCalled(k);
         this[inner] = i;
+    }
+    setImmediates(rangeOffset: GPUSize32, data: GPUAllowSharedBufferSource, dataOffset?: GPUSize64, dataSize?: GPUSize64): undefined {
+        this[inner].setImmediates(
+            rangeOffset,
+            convertBufferToUint8Array(data),
+            numToBigIntOptional(dataOffset),
+            numToBigIntOptional(dataSize)
+        );
     }
     get __brand(): 'GPURenderBundleEncoder' {
         return "GPURenderBundleEncoder";
@@ -1010,7 +1096,7 @@ export class GPUShaderModule implements globalThis.GPUShaderModule {
     }
 
     async getCompilationInfo(): Promise<GPUCompilationInfo> {
-        return new GPUCompilationInfo(key, this[inner].getCompilationInfo());
+        return new GPUCompilationInfo(key, await this[inner].getCompilationInfo());
     }
 }
 
@@ -1147,7 +1233,7 @@ export class GPUBuffer implements globalThis.GPUBuffer {
     }
 
     get usage(): GPUFlagsConstant {
-        return this[inner].usage();
+        return convertBufferUsageWasiToWeb(this[inner].usage());
     }
 
     get mapState(): GPUBufferMapState {
@@ -1159,7 +1245,7 @@ export class GPUBuffer implements globalThis.GPUBuffer {
         offset?: GPUSize64,
         size?: GPUSize64
     ): Promise<undefined> {
-        this[inner].mapAsync(mode, numToBigIntOptional(offset), numToBigIntOptional(size));
+        await this[inner].mapAsync(convertMapModeWebToWasi(mode), numToBigIntOptional(offset), numToBigIntOptional(size));
     }
 
     getMappedRange(
@@ -1378,7 +1464,7 @@ export class GPUTexture implements globalThis.GPUTexture {
         return convertTextureFormatWasiToWeb(this[inner].format());
     }
     get usage(): number {
-        return this[inner].usage();
+        return convertTextureUsageWasiToWeb(this[inner].usage());
     }
     createView(descriptor?: GPUTextureViewDescriptor): GPUTextureView {
         let gfxDescriptor: gfx.GpuTextureViewDescriptor | undefined;
@@ -1389,10 +1475,14 @@ export class GPUTexture implements globalThis.GPUTexture {
             let dimension: gfx.GpuTextureViewDimension | undefined;
             if (descriptor.dimension)
                 dimension = convertTextureViewDimensionWebToWasi(descriptor.dimension);
+            let usage: gfx.GpuTextureUsage | undefined;
+            if (descriptor.usage !== undefined)
+                usage = convertTextureUsageWebToWasi(descriptor.usage);
             gfxDescriptor = {
                 ...descriptor,
                 dimension,
                 format,
+                usage,
             };
         }
         return new GPUTextureView(key, this[inner].createView(gfxDescriptor));
@@ -1455,8 +1545,34 @@ export class GPUCommandEncoder implements globalThis.GPUCommandEncoder {
             timestampWrites,
         }));
     }
-    copyBufferToBuffer(source: GPUBuffer, sourceOffset: GPUSize64, destination: GPUBuffer, destinationOffset: GPUSize64, size: GPUSize64): undefined {
-        this[inner].copyBufferToBuffer(source[inner], numToBigInt(sourceOffset), destination[inner], numToBigInt(destinationOffset), numToBigInt(size));
+    copyBufferToBuffer(source: GPUBuffer, destination: GPUBuffer, size?: GPUSize64): undefined;
+    copyBufferToBuffer(source: GPUBuffer, sourceOffset: GPUSize64, destination: GPUBuffer, destinationOffset: GPUSize64, size?: GPUSize64): undefined;
+    copyBufferToBuffer(source: GPUBuffer, arg2: GPUBuffer | GPUSize64, arg3?: GPUBuffer | GPUSize64, destinationOffset?: GPUSize64, size?: GPUSize64): undefined {
+        if (arg2 instanceof GPUBuffer && (typeof arg3 === "number" || arg3 === undefined)) {
+            // (source, destination, size?)
+            const destination: GPUBuffer = arg2;
+            const size: GPUSize64 | undefined = arg3;
+            this[inner].copyBufferToBuffer(
+                source[inner],
+                undefined,
+                destination[inner],
+                undefined,
+                numToBigIntOptional(size)
+            );
+        } else if (typeof arg2 === "number" && arg3 instanceof GPUBuffer) {
+            // (source, sourceOffset, destination, destinationOffset, size?)
+            const sourceOffset: GPUSize64 | undefined = arg2;
+            const destination: GPUBuffer = arg3;
+            this[inner].copyBufferToBuffer(
+                source[inner],
+                numToBigInt(sourceOffset),
+                destination[inner],
+                numToBigIntOptional(destinationOffset),
+                numToBigIntOptional(size)
+            );
+        } else {
+            throw new Unreachable;
+        }
     }
     copyBufferToTexture(source: GPUTexelCopyBufferInfo, destination: GPUTexelCopyTextureInfo, copySize: GPUExtent3D): undefined {
         let destinationOrigin: gfx.GpuOrigin3D | undefined;
@@ -1598,6 +1714,15 @@ export class GPUComputePassEncoder implements globalThis.GPUComputePassEncoder {
             throw new Todo;
         }
     }
+
+    setImmediates(rangeOffset: GPUSize32, data: GPUAllowSharedBufferSource, dataOffset?: GPUSize64, dataSize?: GPUSize64): undefined {
+        this[inner].setImmediates(
+            rangeOffset,
+            convertBufferToUint8Array(data),
+            numToBigIntOptional(dataOffset),
+            numToBigIntOptional(dataSize)
+        );
+    }
 }
 
 export class GPURenderPassEncoder implements globalThis.GPURenderPassEncoder {
@@ -1651,6 +1776,14 @@ export class GPURenderPassEncoder implements globalThis.GPURenderPassEncoder {
     }
     setBindGroup(index: unknown, bindGroup: unknown, dynamicOffsetsData?: unknown, dynamicOffsetsDataStart?: unknown, dynamicOffsetsDataLength?: unknown): undefined {
         throw new Todo;
+    }
+    setImmediates(rangeOffset: GPUSize32, data: GPUAllowSharedBufferSource, dataOffset?: GPUSize64, dataSize?: GPUSize64): undefined {
+        this[inner].setImmediates(
+            rangeOffset,
+            convertBufferToUint8Array(data),
+            numToBigIntOptional(dataOffset),
+            numToBigIntOptional(dataSize)
+        );
     }
     setPipeline(pipeline: GPURenderPipeline): undefined {
         this[inner].setPipeline(pipeline[inner]);
@@ -1764,6 +1897,7 @@ export const GPUTextureUsage = {
     TEXTURE_BINDING: 0x04,
     STORAGE_BINDING: 0x08,
     RENDER_ATTACHMENT: 0x10,
+    TRANSIENT_ATTACHMENT: 0x20,
 };
 
 export const GPUShaderStage = {

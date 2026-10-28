@@ -1,9 +1,8 @@
-import * as gfx from 'wasi:webgpu/webgpu@0.0.1';
-import * as wasiSurface from 'wasi:surface/surface@0.0.1';
-import * as wasiGraphicsContext from 'wasi:graphics-context/graphics-context@0.0.1';
+import * as wasiSurface from 'wasi-gfx:surface/surface@0.2.0';
+import * as wasiSurfaceWebgpu from 'wasi-gfx:surface/surface-webgpu@0.2.0';
 
 import { inner, key, privateConstructorCalled, Todo, Unreachable, Unimplemented } from './common';
-import { GPUDevice, GPUTexture } from './webgpu';
+import { GPUDevice, GPUTexture, convertTextureFormatWebToWasi, convertTextureUsageWebToWasi } from './webgpu';
 
 export function createCanvas(): HTMLCanvasElement {
     return new HTMLCanvasElement(key);
@@ -14,8 +13,8 @@ export function createCanvas(): HTMLCanvasElement {
 type LimitedCanvas = Pick<globalThis.HTMLCanvasElement, "height" | "width" | "getContext" | "transferControlToOffscreen" | "addEventListener" | "removeEventListener" | "dispatchEvent" | "onclick" | "ondblclick" | "oninput" | "onkeydown" | "onkeyup" | "onpointerdown" | "onpointermove" | "onpointerup">;
 export class HTMLCanvasElement implements LimitedCanvas, AnimationFrameProvider {
     _surface: wasiSurface.Surface;
-    _graphicsContext: wasiGraphicsContext.Context;
-    #framePollable: wasiSurface.Pollable | undefined;
+    _webgpuContext: wasiSurfaceWebgpu.Context | undefined;
+    #frames: AsyncIterator<wasiSurface.FrameEvent> | undefined;
     get height(): number {
         return this._surface.height();
     }
@@ -32,8 +31,6 @@ export class HTMLCanvasElement implements LimitedCanvas, AnimationFrameProvider 
     constructor(k: symbol) {
         privateConstructorCalled(k);
         this._surface = new wasiSurface.Surface({});
-        this._graphicsContext = new wasiGraphicsContext.Context();
-        this._surface.connectGraphicsContext(this._graphicsContext);
     }
 
     getContext(contextId: "2d", options?: CanvasRenderingContext2DSettings | undefined): CanvasRenderingContext2D | null;
@@ -85,17 +82,17 @@ export class HTMLCanvasElement implements LimitedCanvas, AnimationFrameProvider 
         throw new Todo;
     }
     requestAnimationFrame(callback: FrameRequestCallback): number {
-        if (!this.#framePollable)
-            this.#framePollable = this._surface.subscribeFrame();
-        const pollable = this.#framePollable;
+        if (!this.#frames)
+            this.#frames = this._surface.onFrame()[Symbol.asyncIterator]();
+        const frames = this.#frames;
 
-        // giving the event loop a chance to do other work before blocking.
-        Promise.resolve().then(() => {
-            pollable.block();
-            this._surface.getFrame();
+        frames.next().then(({ done }) => {
+            if (done)
+                return;
             // TODO: this number should be real
             callback(0);
-            this._graphicsContext.present();
+            // present automatically just like the web
+            this._webgpuContext?.present();
         });
         // TODO: this number should be real
         return 0;
@@ -113,19 +110,40 @@ export class GPUCanvasContext implements globalThis.GPUCanvasContext {
         throw new Todo;
     }
     configure(configuration: GPUCanvasConfiguration): undefined {
-        let device = (configuration.device as GPUDevice)[inner];
-        let context = this.#canvas._graphicsContext;
-        device.connectGraphicsContext(context);
+        let usage: wasiSurfaceWebgpu.ContextConfiguration["usage"];
+        if (configuration.usage !== undefined)
+            usage = convertTextureUsageWebToWasi(configuration.usage);
+
+        let viewFormats: wasiSurfaceWebgpu.ContextConfiguration["viewFormats"];
+        if (configuration.viewFormats)
+            viewFormats = Array.from(configuration.viewFormats).map(convertTextureFormatWebToWasi);
+
+        const context = new wasiSurfaceWebgpu.Context(this.#canvas._surface);
+        context.configure({
+            ...configuration,
+            usage,
+            viewFormats,
+            device: (configuration.device as GPUDevice)[inner],
+            format: convertTextureFormatWebToWasi(configuration.format),
+        });
+        this.#canvas._webgpuContext = context;
     }
     unconfigure(): undefined {
-        throw new Todo;
+        this.#canvas._webgpuContext?.unconfigure();
+        this.#canvas._webgpuContext = undefined;
     }
     getConfiguration(): GPUCanvasConfigurationOut | null {
         throw new Todo;
     }
     getCurrentTexture(): GPUTexture {
-        const buffer = this.#canvas._graphicsContext.getCurrentBuffer();
-        let texture = gfx.GpuTexture.fromGraphicsBuffer(buffer);
-        return new GPUTexture(key, texture);
+        if (!this.#canvas._webgpuContext) {
+            // https://www.w3.org/TR/webgpu/#dom-gpucanvascontext-getcurrenttexture
+            // > 1. If this.[[configuration]] is null, throw an InvalidStateError and return.
+            throw new DOMException(
+                "GPUCanvasContext.getCurrentTexture: Canvas not configured",
+                "InvalidStateError"
+            );
+        }
+        return new GPUTexture(key, this.#canvas._webgpuContext.getCurrentTexture());
     }
 }
