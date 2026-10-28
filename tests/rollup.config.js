@@ -4,9 +4,9 @@ export default function() {
     return {
         input: `./tests/tests.ts`,
         external: [
-            'wasi:webgpu/webgpu',
-            'wasi:webgpu/surface',
-            'wasi:webgpu/graphics-context',
+            'wasi:webgpu/webgpu@0.0.1',
+            'wasi:surface/surface@0.0.1',
+            'wasi:graphics-context/graphics-context@0.0.1',
         ],
         output: {
             file: `temp/tests.js`,

@@ -5,7 +5,7 @@ import { parseQuery } from "./cts/src/common/internal/query/parseQuery";
 import { TestQuerySingleCase } from "./cts/src/common/internal/query/query";
 import { TestGroup } from "./cts/src/common/internal/test_group";
 
-import { declareGlobals } from "./globals";
+import { declareGlobals } from "../src/globals";
 import { specs } from "./spec-list";
 
 const log = new Logger();
