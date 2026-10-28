@@ -1,5 +1,5 @@
 import * as gfx from 'wasi:webgpu/webgpu@0.0.1';
-import { inner, key, privateConstructorCalled, Todo, Unreachable } from './common';
+import { inner, key, privateConstructorCalled, Todo, Unreachable, EventTarget } from './common';
 
 // converters
 
