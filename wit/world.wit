@@ -1,10 +1,11 @@
-package wasi-gfx:js-webgpu@0.1.0;
+package wasi-gfx:js-webgpu;
 
 world imports {
-    import wasi:webgpu/webgpu@0.0.1;
-    import wasi:graphics-context/graphics-context@0.0.1;
-    import wasi:surface/surface@0.0.1;
-    import wasi:frame-buffer/frame-buffer@0.0.1;
-    import wasi:cli/stdout@0.2.0;
-    export wasi:cli/run@0.2.0;
+    import wasi:webgpu/webgpu@0.3.0-rc.2;
+    import wasi-gfx:frame-buffer/frame-buffer@0.2.0;
+    import wasi-gfx:surface/surface@0.2.0;
+    import wasi-gfx:surface/surface-webgpu@0.2.0;
+    import wasi-gfx:surface/surface-frame-buffer@0.2.0;
+    import wasi:cli/stdout@0.3.0;
+    export wasi:cli/run@0.3.0;
 }

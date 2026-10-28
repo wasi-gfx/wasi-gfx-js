@@ -19,8 +19,8 @@ npm run example --example=[example]
 ### Run an example:
 Use [github.com/wasi-gfx/graphtime](https://github.com/wasi-gfx/graphtime) to run ./out/[example].wasm
 
-
-## Generate types from wit
+## After Updating wit
+Make sure to run:
 ```shell
-jco types wit --out-dir=types
+npm run wit
 ```

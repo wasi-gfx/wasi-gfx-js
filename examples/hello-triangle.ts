@@ -95,4 +95,7 @@ async function main() {
         canvas.requestAnimationFrame(render);
     }
     canvas.requestAnimationFrame(render);
+
+    // Never resolving promise to keep running the render loop
+    await new Promise(() => {});
 }

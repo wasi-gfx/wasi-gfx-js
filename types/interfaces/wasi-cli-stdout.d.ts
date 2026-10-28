@@ -1,3 +1,14 @@
-/** @module Interface wasi:cli/stdout@0.2.0 **/
-export function getStdout(): OutputStream;
-export type OutputStream = import('./wasi-io-streams.js').OutputStream;
+/** @module Interface wasi:cli/stdout@0.3.0 **/
+/**
+ * Write the given stream to stdout.
+ * 
+ * If the stream's writable end is dropped this function will either return
+ * success once the entire contents of the stream have been written or an
+ * error-code representing a failure.
+ * 
+ * Otherwise if there is an error the readable end of the stream will be
+ * dropped and this function will return an error-code.
+ */
+export function writeViaStream(data: AsyncIterable<number>): PromiseLike<Result<void, ErrorCode>>;
+export type ErrorCode = import('./wasi-cli-types.js').ErrorCode;
+export type Result<T, E> = { tag: 'ok', val: T } | { tag: 'err', val: E };
