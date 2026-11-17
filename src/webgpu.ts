@@ -686,9 +686,27 @@ export class GPUAdapterInfo implements globalThis.GPUAdapterInfo {
     }
 }
 
+export class GPUDeviceLostInfo implements globalThis.GPUDeviceLostInfo {
+    [inner]: gfx.GpuDeviceLostInfo;
+    constructor(k: symbol, i: gfx.GpuDeviceLostInfo) {
+        privateConstructorCalled(k);
+        this[inner] = i;
+    }
+    get __brand(): 'GPUDeviceLostInfo' {
+        return "GPUDeviceLostInfo";
+    }
+    get reason(): GPUDeviceLostReason {
+        return this[inner].reason();
+    }
+    get message(): string {
+        return this[inner].message();
+    }
+}
+
 export class GPUDevice extends EventTarget implements globalThis.GPUDevice {
     [inner]: gfx.GpuDevice;
     #adapterInfo: GPUAdapterInfo | undefined;
+    #lost: Promise<GPUDeviceLostInfo> | undefined;
 
     constructor(k: symbol, i: gfx.GpuDevice) {
         privateConstructorCalled(k);
@@ -705,7 +723,10 @@ export class GPUDevice extends EventTarget implements globalThis.GPUDevice {
         this[inner].setLabel(value);
     }
     get lost(): Promise<GPUDeviceLostInfo> {
-        throw new Todo();
+        if(!this.#lost)
+            this.#lost = Promise.resolve(this[inner].lost())
+                .then(info => new GPUDeviceLostInfo(key, info));
+        return this.#lost;
     }
     get features(): GPUSupportedFeatures {
         return new GPUSupportedFeatures(key, this[inner].features());
