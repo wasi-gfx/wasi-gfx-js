@@ -1,4 +1,4 @@
-import { getGpu, GPU, GPUAdapter, GPUDevice, GPUQueue, GPUBuffer, GPUBufferUsage, GPUMapMode, GPUTextureUsage, GPUTexture, GPUTextureView, GPUSampler, GPUBindGroupLayout, GPUPipelineLayout, GPUBindGroup, GPUShaderModule, GPUShaderStage, GPUComputePipeline, GPURenderPipeline, GPUColorWrite, GPUCommandEncoder, GPURenderPassEncoder, GPUComputePassEncoder, GPUCommandBuffer, GPUQuerySet } from "./webgpu";
+import { getGpu, GPU, GPUAdapter, GPUDeviceLostInfo, GPUDevice, GPUQueue, GPUBuffer, GPUBufferUsage, GPUMapMode, GPUTextureUsage, GPUTexture, GPUTextureView, GPUSampler, GPUBindGroupLayout, GPUPipelineLayout, GPUBindGroup, GPUShaderModule, GPUShaderStage, GPUComputePipeline, GPURenderPipeline, GPUColorWrite, GPUCommandEncoder, GPURenderPassEncoder, GPUComputePassEncoder, GPUCommandBuffer, GPUQuerySet } from "./webgpu";
 
 class Navigator implements Pick<globalThis.Navigator, "gpu"> {
   gpu: GPU;
@@ -24,7 +24,7 @@ export function declareGlobals() {
   // defineGlobal("GPUAdapterInfo", GPUAdapterInfo);
   // defineGlobal("GPUSupportedLimits", GPUSupportedLimits);
   // defineGlobal("GPUSupportedFeatures", GPUSupportedFeatures);
-  // defineGlobal("GPUDeviceLostInfo", GPUDeviceLostInfo);
+  defineGlobal("GPUDeviceLostInfo", GPUDeviceLostInfo);
   defineGlobal("GPUDevice", GPUDevice);
   defineGlobal("GPUQueue", GPUQueue);
   defineGlobal("GPUBuffer", GPUBuffer);
