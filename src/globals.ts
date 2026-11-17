@@ -1,4 +1,4 @@
-import { getGpu, GPU, GPUAdapter, GPUDeviceLostInfo, GPUDevice, GPUQueue, GPUBuffer, GPUBufferUsage, GPUMapMode, GPUTextureUsage, GPUTexture, GPUTextureView, GPUSampler, GPUBindGroupLayout, GPUPipelineLayout, GPUBindGroup, GPUShaderModule, GPUShaderStage, GPUComputePipeline, GPURenderPipeline, GPUColorWrite, GPUCommandEncoder, GPURenderPassEncoder, GPUComputePassEncoder, GPUCommandBuffer, GPUQuerySet } from "./webgpu";
+import { getGpu, GPU, GPUAdapter, GPUDeviceLostInfo, GPUDevice, GPUQueue, GPUBuffer, GPUBufferUsage, GPUMapMode, GPUTextureUsage, GPUTexture, GPUTextureView, GPUSampler, GPUBindGroupLayout, GPUPipelineLayout, GPUBindGroup, GPUShaderModule, GPUShaderStage, GPUComputePipeline, GPURenderPipeline, GPUColorWrite, GPUCommandEncoder, GPURenderPassEncoder, GPUComputePassEncoder, GPUCommandBuffer, GPUQuerySet, GPUAdapterInfo, GPUSupportedLimits, GPUSupportedFeatures, GPURenderBundleEncoder, GPURenderBundle } from "./webgpu";
 
 class Navigator implements Pick<globalThis.Navigator, "gpu"> {
   gpu: GPU;
@@ -21,9 +21,9 @@ export function declareGlobals() {
   defineGlobal("navigator", new Navigator());
   defineGlobal("GPU", GPU);
   defineGlobal("GPUAdapter", GPUAdapter);
-  // defineGlobal("GPUAdapterInfo", GPUAdapterInfo);
-  // defineGlobal("GPUSupportedLimits", GPUSupportedLimits);
-  // defineGlobal("GPUSupportedFeatures", GPUSupportedFeatures);
+  defineGlobal("GPUAdapterInfo", GPUAdapterInfo);
+  defineGlobal("GPUSupportedLimits", GPUSupportedLimits);
+  defineGlobal("GPUSupportedFeatures", GPUSupportedFeatures);
   defineGlobal("GPUDeviceLostInfo", GPUDeviceLostInfo);
   defineGlobal("GPUDevice", GPUDevice);
   defineGlobal("GPUQueue", GPUQueue);
@@ -46,8 +46,8 @@ export function declareGlobals() {
   defineGlobal("GPURenderPassEncoder", GPURenderPassEncoder);
   defineGlobal("GPUComputePassEncoder", GPUComputePassEncoder);
   defineGlobal("GPUCommandBuffer", GPUCommandBuffer);
-  // defineGlobal("GPURenderBundleEncoder", GPURenderBundleEncoder);
-  // defineGlobal("GPURenderBundle", GPURenderBundle);
+  defineGlobal("GPURenderBundleEncoder", GPURenderBundleEncoder);
+  defineGlobal("GPURenderBundle", GPURenderBundle);
   defineGlobal("GPUQuerySet", GPUQuerySet);
   // defineGlobal("GPUError", GPUError);
   // defineGlobal("GPUValidationError", GPUValidationError);
