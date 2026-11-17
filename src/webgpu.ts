@@ -408,6 +408,22 @@ function convertGpuBindingResourceWebToWasi(resource: GPUBindingResource): gfx.G
     }
 }
 
+function convertGpuErrorWasiToWeb(err: gfx.GpuError): GPUError {
+    const message = err.message();
+    const kind = err.kind();
+    switch (kind.tag) {
+        case "validation-error":
+            return new GPUValidationError(message);
+        case "out-of-memory-error":
+            return new GPUOutOfMemoryError(message);
+        case "internal-error":
+            return new GPUInternalError(message);
+        default:
+            kind satisfies never;
+            throw new Unreachable();
+    }
+}
+
 function convertBufferToUint8Array(buffer: ArrayBufferView | ArrayBuffer | SharedArrayBuffer): Uint8Array {
     if (buffer instanceof Uint8Array) {
         return buffer;
@@ -700,6 +716,55 @@ export class GPUDeviceLostInfo implements globalThis.GPUDeviceLostInfo {
     }
     get message(): string {
         return this[inner].message();
+    }
+}
+
+export class GPUError implements globalThis.GPUError {
+    #message: string;
+    constructor(k: symbol, message: string) {
+        privateConstructorCalled(k);
+        this.#message = message;
+    }
+    get message(): string {
+        return this.#message;
+    }
+}
+
+export class GPUValidationError extends GPUError implements globalThis.GPUValidationError {
+    constructor(message: string) {
+        super(key, message);
+    }
+    get __brand(): 'GPUValidationError' {
+        return "GPUValidationError";
+    }
+}
+
+export class GPUOutOfMemoryError extends GPUError implements globalThis.GPUOutOfMemoryError {
+    constructor(message: string) {
+        super(key, message);
+    }
+    get __brand(): 'GPUOutOfMemoryError' {
+        return "GPUOutOfMemoryError";
+    }
+}
+
+export class GPUInternalError extends GPUError implements globalThis.GPUInternalError {
+    constructor(message: string) {
+        super(key, message);
+    }
+    get __brand(): 'GPUInternalError' {
+        return "GPUInternalError";
+    }
+}
+
+export class GPUPipelineError extends DOMException implements globalThis.GPUPipelineError {
+    readonly reason: GPUPipelineErrorReason;
+    constructor(message: string = "", options: GPUPipelineErrorInit) {
+        super(message, "GPUPipelineError");
+        this.reason = options.reason;
+    }
+    get __brand(): 'GPUPipelineError' {
+        return "GPUPipelineError";
     }
 }
 
@@ -1003,9 +1068,7 @@ export class GPUDevice extends EventTarget implements globalThis.GPUDevice {
     async popErrorScope(): Promise<GPUError | null> {
         const err = await this[inner].popErrorScope();
         if(err) {
-            return {
-                message: err.message(),
-            };
+            return convertGpuErrorWasiToWeb(err);
         } else {
             return null;
         }
