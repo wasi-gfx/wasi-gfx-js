@@ -1317,8 +1317,8 @@ export class GPUQueue implements globalThis.GPUQueue {
         this[inner].submit(Array.from(commandBuffers).map((cb) => cb[inner]));
     }
 
-    onSubmittedWorkDone(): Promise<undefined> {
-        throw new Todo();
+    async onSubmittedWorkDone(): Promise<undefined> {
+        await this[inner].onSubmittedWorkDone();
     }
 
     writeBuffer(
