@@ -1,6 +1,6 @@
 {
     "name": "@wasi-gfx/js-webgpu",
-    "version": "0.3.0",
+    "version": "0.4.0",
     "description": "WebGPU JavaScript API on top of wasi-gfx",
     "exports": {
         "./canvas": {
