@@ -301,6 +301,16 @@ function convertTextureViewDimensionWasiToWeb(name: gfx.GpuTextureViewDimension)
     }
 }
 
+function convertConstantsWebToWasi(constants: Record<string, GPUPipelineConstantValue> | undefined): gfx.RecordGpuPipelineConstantValue | undefined {
+    if (constants === undefined)
+        return undefined;
+    const record = new gfx.RecordGpuPipelineConstantValue();
+    for (const [key, value] of Object.entries(constants)) {
+        record.add(key, value);
+    }
+    return record;
+}
+
 function convertGpuLayoutWebToWasi(layout: GPUAutoLayoutMode | globalThis.GPUPipelineLayout): gfx.GpuLayoutMode {
     if (layout instanceof GPUPipelineLayout) {
         return {
@@ -944,7 +954,7 @@ export class GPUDevice extends EventTarget implements globalThis.GPUDevice {
         let compute: gfx.GpuProgrammableStage = {
             module: (descriptor.compute.module as GPUShaderModule)[inner],
             entryPoint: descriptor.compute.entryPoint,
-            constants: undefined, // TODO:
+            constants: convertConstantsWebToWasi(descriptor.compute.constants),
         };
 
         return new GPUComputePipeline(key, this[inner].createComputePipeline({
@@ -977,7 +987,7 @@ export class GPUDevice extends EventTarget implements globalThis.GPUDevice {
         }
         const vertex: gfx.GpuVertexState = {
             ...descriptor.vertex,
-            constants: undefined, // TODO: 
+            constants: convertConstantsWebToWasi(descriptor.vertex.constants),
             module: (descriptor.vertex.module as GPUShaderModule)[inner],
             buffers,
         };
@@ -992,7 +1002,7 @@ export class GPUDevice extends EventTarget implements globalThis.GPUDevice {
         if (descriptor.fragment) {
             fragment = {
                 ...descriptor.fragment,
-                constants: undefined, // TODO:
+                constants: convertConstantsWebToWasi(descriptor.fragment.constants),
                 module: (descriptor.fragment.module as GPUShaderModule)[inner],
                 targets: Array.from(descriptor.fragment.targets).map(target => {
                     if (target) {
