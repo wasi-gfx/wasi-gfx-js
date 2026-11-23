@@ -798,9 +798,18 @@ export class GPUDevice extends EventTarget implements globalThis.GPUDevice {
         this[inner].setLabel(value);
     }
     get lost(): Promise<GPUDeviceLostInfo> {
-        if(!this.#lost)
-            this.#lost = Promise.resolve(this[inner].lost())
-                .then(info => new GPUDeviceLostInfo(key, info));
+        if(!this.#lost) {
+            // The generated types declare `lost()` as `PromiseLike`, but componentize-qjs returns a non-thenable future reader (`.read()` yields the value). So read it only if it isn't thenable.
+            // See https://github.com/bytecodealliance/jco/issues/2532
+            const lost = this[inner].lost() as PromiseLike<gfx.GpuDeviceLostInfo> | { read(): Promise<gfx.GpuDeviceLostInfo> };
+            let info: Promise<gfx.GpuDeviceLostInfo>;
+            if ('then' in lost && typeof lost.then === 'function') {
+                info = Promise.resolve(lost as PromiseLike<gfx.GpuDeviceLostInfo>);
+            } else {
+                info = (lost as { read(): Promise<gfx.GpuDeviceLostInfo> }).read();
+            }
+            this.#lost = info.then(info => new GPUDeviceLostInfo(key, info));
+        }
         return this.#lost;
     }
     get features(): GPUSupportedFeatures {
