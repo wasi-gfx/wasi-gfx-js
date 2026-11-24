@@ -464,6 +464,7 @@ function convertBufferToUint8Array(buffer: ArrayBufferView | ArrayBuffer | Share
 
 export class GPU implements globalThis.GPU {
     [inner]: gfx.Gpu;
+    #wgslLanguageFeatures: WGSLLanguageFeatures | undefined;
 
     constructor(k: symbol, i: gfx.Gpu) {
         privateConstructorCalled(k);
@@ -474,7 +475,9 @@ export class GPU implements globalThis.GPU {
     }
 
     get wgslLanguageFeatures(): WGSLLanguageFeatures {
-        throw new Todo;
+        if (!this.#wgslLanguageFeatures)
+            this.#wgslLanguageFeatures = new WGSLLanguageFeatures(key, this[inner].wgslLanguageFeatures());
+        return this.#wgslLanguageFeatures;
     }
 
     async requestAdapter(descriptor: GPURequestAdapterOptions = {}): Promise<GPUAdapter | null> {
@@ -552,6 +555,38 @@ export class GPUSupportedFeatures implements globalThis.GPUSupportedFeatures {
     }
     get __brand(): 'GPUSupportedFeatures' {
         return "GPUSupportedFeatures";
+    }
+    get size(): number {
+        throw new Todo;
+    }
+    has(value: string): boolean {
+        return this[inner].has(value);
+    }
+    forEach(callbackfn: (value: string, value2: string, set: ReadonlySet<string>) => void, thisArg?: any): void {
+        throw new Todo;
+    }
+    entries(): SetIterator<[string, string]> {
+        throw new Todo;
+    }
+    keys(): SetIterator<string> {
+        throw new Todo;
+    }
+    values(): SetIterator<string> {
+        throw new Todo;
+    }
+    [Symbol.iterator](): SetIterator<string> {
+        throw new Todo;
+    }
+}
+
+export class WGSLLanguageFeatures implements globalThis.WGSLLanguageFeatures {
+    [inner]: gfx.WgslLanguageFeatures;
+    constructor(k: symbol, i: gfx.WgslLanguageFeatures) {
+        privateConstructorCalled(k);
+        this[inner] = i;
+    }
+    get __brand(): 'WGSLLanguageFeatures' {
+        return "WGSLLanguageFeatures";
     }
     get size(): number {
         throw new Todo;
