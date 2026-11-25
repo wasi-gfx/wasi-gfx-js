@@ -460,6 +460,42 @@ function convertBufferToUint8Array(buffer: ArrayBufferView | ArrayBuffer | Share
     }
 }
 
+// helpers
+function setBindGroup(
+    encoder: gfx.GpuComputePassEncoder | gfx.GpuRenderPassEncoder | gfx.GpuRenderBundleEncoder,
+    index: GPUIndex32,
+    bindGroup: GPUBindGroup | null | undefined,
+    dynamicOffsetsData?: Iterable<GPUBufferDynamicOffset> | Uint32Array,
+    dynamicOffsetsDataStart?: GPUSize64,
+    dynamicOffsetsDataLength?: GPUSize32,
+) {
+    let bindGroupGfx: gfx.GpuBindGroup | undefined;
+    if (bindGroup)
+        bindGroupGfx = bindGroup[inner];
+
+    if ((dynamicOffsetsData === undefined || dynamicOffsetsData[Symbol.iterator]) && dynamicOffsetsDataStart === undefined && dynamicOffsetsDataLength === undefined) {
+        // overload:
+        // `undefined setBindGroup(GPUIndex32 index, GPUBindGroup? bindGroup, optional sequence<GPUBufferDynamicOffset> dynamicOffsets = []);`
+        let dynamicOffsetsDataGfx: Uint32Array | undefined;
+        if (dynamicOffsetsData) {
+            if (dynamicOffsetsData instanceof Uint32Array) {
+                dynamicOffsetsDataGfx = dynamicOffsetsData;
+            } else {
+                dynamicOffsetsDataGfx = new Uint32Array(dynamicOffsetsData);
+            }
+        }
+        encoder.setBindGroup(index, bindGroupGfx, dynamicOffsetsDataGfx, undefined, undefined);
+    } else if (dynamicOffsetsData instanceof Uint32Array && typeof dynamicOffsetsDataStart === "number" && typeof dynamicOffsetsDataLength === "number") {
+        // overload:
+        // `undefined setBindGroup(GPUIndex32 index, GPUBindGroup? bindGroup, [AllowShared] Uint32Array dynamicOffsetsData, GPUSize64 dynamicOffsetsDataStart, GPUSize32 dynamicOffsetsDataLength);`
+        if (dynamicOffsetsDataStart + dynamicOffsetsDataLength > dynamicOffsetsData.length)
+            throw new RangeError("dynamicOffsetsDataStart + dynamicOffsetsDataLength exceeds dynamicOffsetsData.length");
+        encoder.setBindGroup(index, bindGroupGfx, dynamicOffsetsData, numToBigInt(dynamicOffsetsDataStart), dynamicOffsetsDataLength);
+    } else {
+        throw new Unreachable;
+    }
+}
+
 // When forwarding a method to gfx.[type].[method], always pass down objects (like `...descriptor`) so that if new fields are added and tsc can catch it.
 
 export class GPU implements globalThis.GPU {
@@ -1170,8 +1206,10 @@ export class GPURenderBundleEncoder implements globalThis.GPURenderBundleEncoder
     insertDebugMarker(markerLabel: string): undefined {
         this[inner].insertDebugMarker(markerLabel);
     }
-    setBindGroup(index: unknown, bindGroup: unknown, dynamicOffsetsData?: unknown, dynamicOffsetsDataStart?: unknown, dynamicOffsetsDataLength?: unknown): undefined {
-        throw new Todo;
+    setBindGroup(index: GPUIndex32, bindGroup: GPUBindGroup | null | undefined, dynamicOffsets?: Iterable<GPUBufferDynamicOffset>): undefined;
+    setBindGroup(index: GPUIndex32, bindGroup: GPUBindGroup | null | undefined, dynamicOffsetsData: Uint32Array, dynamicOffsetsDataStart: GPUSize64, dynamicOffsetsDataLength: GPUSize32): undefined;
+    setBindGroup(index: GPUIndex32, bindGroup: GPUBindGroup | null | undefined, dynamicOffsetsData?: Iterable<GPUBufferDynamicOffset> | Uint32Array, dynamicOffsetsDataStart?: GPUSize64, dynamicOffsetsDataLength?: GPUSize32): undefined {
+        setBindGroup(this[inner], index, bindGroup, dynamicOffsetsData, dynamicOffsetsDataStart, dynamicOffsetsDataLength);
     }
     setPipeline(pipeline: GPURenderPipeline): undefined {
         this[inner].setPipeline(pipeline[inner]);
@@ -1832,25 +1870,10 @@ export class GPUComputePassEncoder implements globalThis.GPUComputePassEncoder {
         this[inner].insertDebugMarker(markerLabel);
     }
 
-    setBindGroup(index: GPUIndex32, bindGroup: GPUBindGroup | null, dynamicOffsetsData?: Iterable<GPUBufferDynamicOffset> | Uint32Array, dynamicOffsetsDataStart?: GPUSize64, dynamicOffsetsDataLength?: GPUSize32): undefined {
-        let bindGroupGfx: gfx.GpuBindGroup | undefined;
-        if (bindGroup)
-            bindGroupGfx = bindGroup[inner];
-        if ((dynamicOffsetsData === undefined || dynamicOffsetsData[Symbol.iterator]) && dynamicOffsetsDataStart === undefined && dynamicOffsetsDataLength === undefined) {
-            let dynamicOffsetsDataGfx: Uint32Array | undefined;
-            if (dynamicOffsetsData) {
-                if (dynamicOffsetsData instanceof Uint32Array) {
-                    dynamicOffsetsDataGfx = dynamicOffsetsData;
-                } else {
-                    dynamicOffsetsDataGfx = new Uint32Array(dynamicOffsetsData);
-                }
-            }
-            this[inner].setBindGroup(index, bindGroupGfx, dynamicOffsetsDataGfx, dynamicOffsetsDataStart, dynamicOffsetsDataLength);
-        } else if (dynamicOffsetsData instanceof Uint32Array && typeof dynamicOffsetsDataStart === "number" && typeof dynamicOffsetsDataLength === "number") {
-            this[inner].setBindGroup(index, bindGroupGfx, dynamicOffsetsData, numToBigInt(dynamicOffsetsDataStart), dynamicOffsetsDataLength);
-        } else {
-            throw new Todo;
-        }
+    setBindGroup(index: GPUIndex32, bindGroup: GPUBindGroup | null | undefined, dynamicOffsets?: Iterable<GPUBufferDynamicOffset>): undefined;
+    setBindGroup(index: GPUIndex32, bindGroup: GPUBindGroup | null | undefined, dynamicOffsetsData: Uint32Array, dynamicOffsetsDataStart: GPUSize64, dynamicOffsetsDataLength: GPUSize32): undefined;
+    setBindGroup(index: GPUIndex32, bindGroup: GPUBindGroup | null | undefined, dynamicOffsetsData?: Iterable<GPUBufferDynamicOffset> | Uint32Array, dynamicOffsetsDataStart?: GPUSize64, dynamicOffsetsDataLength?: GPUSize32): undefined {
+        setBindGroup(this[inner], index, bindGroup, dynamicOffsetsData, dynamicOffsetsDataStart, dynamicOffsetsDataLength);
     }
 
     setImmediates(rangeOffset: GPUSize32, data: GPUAllowSharedBufferSource, dataOffset?: GPUSize64, dataSize?: GPUSize64): undefined {
@@ -1912,8 +1935,10 @@ export class GPURenderPassEncoder implements globalThis.GPURenderPassEncoder {
     insertDebugMarker(markerLabel: string): undefined {
         this[inner].insertDebugMarker(markerLabel);
     }
-    setBindGroup(index: unknown, bindGroup: unknown, dynamicOffsetsData?: unknown, dynamicOffsetsDataStart?: unknown, dynamicOffsetsDataLength?: unknown): undefined {
-        throw new Todo;
+    setBindGroup(index: GPUIndex32, bindGroup: GPUBindGroup | null | undefined, dynamicOffsets?: Iterable<GPUBufferDynamicOffset>): undefined;
+    setBindGroup(index: GPUIndex32, bindGroup: GPUBindGroup | null | undefined, dynamicOffsetsData: Uint32Array, dynamicOffsetsDataStart: GPUSize64, dynamicOffsetsDataLength: GPUSize32): undefined;
+    setBindGroup(index: GPUIndex32, bindGroup: GPUBindGroup | null | undefined, dynamicOffsetsData?: Iterable<GPUBufferDynamicOffset> | Uint32Array, dynamicOffsetsDataStart?: GPUSize64, dynamicOffsetsDataLength?: GPUSize32): undefined {
+        setBindGroup(this[inner], index, bindGroup, dynamicOffsetsData, dynamicOffsetsDataStart, dynamicOffsetsDataLength);
     }
     setImmediates(rangeOffset: GPUSize32, data: GPUAllowSharedBufferSource, dataOffset?: GPUSize64, dataSize?: GPUSize64): undefined {
         this[inner].setImmediates(
