@@ -1,5 +1,5 @@
 import * as gfx from 'wasi:webgpu/webgpu@0.3.0-rc.2';
-import { EventTarget, inner, key, privateConstructorCalled, Todo, Unreachable } from './common';
+import { EventTarget, inner, key, privateConstructorCalled, Todo, Unimplemented, Unreachable } from './common';
 
 // What componentize-qjs and componentize-js throw when a WIT function returns an error.
 type ComponentError<T> = Error & { payload: T };
@@ -1188,7 +1188,7 @@ export class GPUDevice extends EventTarget implements globalThis.GPUDevice {
     }
 
     importExternalTexture(descriptor: GPUExternalTextureDescriptor): GPUExternalTexture {
-        throw new Todo;
+        throw new Unimplemented;
     }
     onuncapturederror: ((this: globalThis.GPUDevice, ev: GPUUncapturedErrorEvent) => any) | null = null;
 }
@@ -1689,6 +1689,17 @@ export class GPUTexture implements globalThis.GPUTexture {
     destroy(): undefined {
         this[inner].destroy();
     }
+}
+
+// wasi:webgpu has no external texture, so this is never constructed. It exists so `instanceof GPUExternalTexture` in WebGPU spec tests works.
+export class GPUExternalTexture implements globalThis.GPUExternalTexture {
+    constructor(k: symbol) {
+        privateConstructorCalled(k);
+    }
+    get __brand(): 'GPUExternalTexture' {
+        return "GPUExternalTexture";
+    }
+    label = "";
 }
 
 export class GPUCommandEncoder implements globalThis.GPUCommandEncoder {
