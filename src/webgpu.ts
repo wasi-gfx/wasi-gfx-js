@@ -334,7 +334,6 @@ function convertGpuLayoutWasiToWeb(layout: gfx.GpuLayoutMode): GPUPipelineLayout
 }
 
 function convertColorWebToWasi(color: GPUColor): gfx.GpuColor {
-    // https://www.w3.org/TR/webgpu/#colors-and-vectors
     if (Symbol.iterator in color) {
         const iter = color[Symbol.iterator]();
         const r = iter.next().value;
@@ -342,6 +341,8 @@ function convertColorWebToWasi(color: GPUColor): gfx.GpuColor {
         const b = iter.next().value;
         const a = iter.next().value;
         if (r === undefined || g === undefined || b === undefined || a === undefined || !iter.next().done)
+            // https://www.w3.org/TR/webgpu/#abstract-opdef-validate-gpucolor-shape
+            // > Throw a TypeError if color is a sequence and color.size ≠ 4.
             throw new TypeError("color must have exactly 4 items");
         return {
             r, g, b, a,
@@ -352,7 +353,7 @@ function convertColorWebToWasi(color: GPUColor): gfx.GpuColor {
 }
 
 function convertExtent3DWebToWasi(extent: GPUExtent3D): gfx.GpuExtent3D {
-    // TODO: add correct link https://www.w3.org/TR/webgpu/#colors-and-vectors
+    // https://www.w3.org/TR/webgpu/#gpuextent3d-width
     if (Symbol.iterator in extent) {
         const iter = extent[Symbol.iterator]();
         const width = iter.next().value;
@@ -371,14 +372,14 @@ function convertExtent3DWebToWasi(extent: GPUExtent3D): gfx.GpuExtent3D {
 }
 
 function convertOrigin3DWebToWasi(origin: GPUOrigin3D): gfx.GpuOrigin3D {
-    // TODO: add correct link https://www.w3.org/TR/webgpu/#colors-and-vectors
+    // Missing sequence items default to 0: https://www.w3.org/TR/webgpu/#gpuorigin3d-x
     if (Symbol.iterator in origin) {
         const iter = origin[Symbol.iterator]();
-        const x = iter.next().value;
-        const y = iter.next().value;
-        const z = iter.next().value;
-        if (x === undefined || y === undefined || z === undefined || !iter.next().done)
-            throw new TypeError("origin must have exactly 3 items");
+        const x = iter.next().value ?? 0;
+        const y = iter.next().value ?? 0;
+        const z = iter.next().value ?? 0;
+        if (!iter.next().done)
+            throw new TypeError("origin must have at most 3 items");
         return {
             x,
             y,
