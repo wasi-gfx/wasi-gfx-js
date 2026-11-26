@@ -1,4 +1,4 @@
-import { getGpu, GPU, GPUAdapter, GPUDeviceLostInfo, GPUDevice, GPUQueue, GPUBuffer, GPUBufferUsage, GPUMapMode, GPUTextureUsage, GPUTexture, GPUTextureView, GPUSampler, GPUBindGroupLayout, GPUPipelineLayout, GPUBindGroup, GPUShaderModule, GPUShaderStage, GPUComputePipeline, GPURenderPipeline, GPUColorWrite, GPUCommandEncoder, GPURenderPassEncoder, GPUComputePassEncoder, GPUCommandBuffer, GPUQuerySet, GPUAdapterInfo, GPUSupportedLimits, GPUSupportedFeatures, GPURenderBundleEncoder, GPURenderBundle, GPUError, GPUValidationError, GPUOutOfMemoryError, GPUInternalError, GPUPipelineError, WGSLLanguageFeatures } from "./webgpu";
+import { getGpu, GPU, GPUAdapter, GPUDeviceLostInfo, GPUDevice, GPUQueue, GPUBuffer, GPUBufferUsage, GPUMapMode, GPUTextureUsage, GPUTexture, GPUTextureView, GPUExternalTexture, GPUSampler, GPUBindGroupLayout, GPUPipelineLayout, GPUBindGroup, GPUShaderModule, GPUShaderStage, GPUComputePipeline, GPURenderPipeline, GPUColorWrite, GPUCommandEncoder, GPURenderPassEncoder, GPUComputePassEncoder, GPUCommandBuffer, GPUQuerySet, GPUAdapterInfo, GPUSupportedLimits, GPUSupportedFeatures, GPURenderBundleEncoder, GPURenderBundle, GPUError, GPUValidationError, GPUOutOfMemoryError, GPUInternalError, GPUPipelineError, WGSLLanguageFeatures } from "./webgpu";
 
 class Navigator implements Pick<globalThis.Navigator, "gpu"> {
   gpu: GPU;
@@ -34,6 +34,7 @@ export function declareGlobals() {
   defineGlobal("GPUTextureUsage", GPUTextureUsage);
   defineGlobal("GPUTexture", GPUTexture);
   defineGlobal("GPUTextureView", GPUTextureView);
+  defineGlobal("GPUExternalTexture", GPUExternalTexture);
   defineGlobal("GPUSampler", GPUSampler);
   defineGlobal("GPUBindGroupLayout", GPUBindGroupLayout);
   defineGlobal("GPUPipelineLayout", GPUPipelineLayout);
