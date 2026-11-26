@@ -1,6 +1,9 @@
 import * as gfx from 'wasi:webgpu/webgpu@0.3.0-rc.2';
 import { EventTarget, inner, key, privateConstructorCalled, Todo, Unreachable } from './common';
 
+// What componentize-qjs and componentize-js throw when a WIT function returns an error.
+type ComponentError<T> = Error & { payload: T };
+
 // flags converters: the web API uses numeric bitflags, wasi uses flag records.
 function convertBufferUsageWebToWasi(usage: number): gfx.GpuBufferUsage {
     return {
@@ -434,6 +437,19 @@ function convertGpuErrorWasiToWeb(err: gfx.GpuError): GPUError {
     }
 }
 
+function convertRequestDeviceErrorWasiToWeb(err: gfx.RequestDeviceError): TypeError | DOMException {
+    const kind = err.kind;
+    switch (kind.tag) {
+        case "type-error":
+            return new TypeError(err.message);
+        case "operation-error":
+            return new DOMException(err.message, "OperationError");
+        default:
+            kind satisfies never;
+            throw new Unreachable;
+    }
+}
+
 function convertBufferToUint8Array(buffer: ArrayBufferView | ArrayBuffer | SharedArrayBuffer): Uint8Array {
     if (buffer instanceof Uint8Array) {
         return buffer;
@@ -550,11 +566,17 @@ export class GPUAdapter implements globalThis.GPUAdapter {
             }
         }
 
-        return new GPUDevice(key, await this[inner].requestDevice({
-            ...descriptor,
-            requiredFeatures,
-            requiredLimits,
-        }));
+        try {
+            return new GPUDevice(key, await this[inner].requestDevice({
+                ...descriptor,
+                requiredFeatures,
+                requiredLimits,
+            }));
+        } catch (e) {
+            if (e instanceof Error && "payload" in e)
+                throw convertRequestDeviceErrorWasiToWeb((e as ComponentError<gfx.RequestDeviceError>).payload);
+            throw e;
+        }
     }
 
     requestAdapterInfo() {
