@@ -451,6 +451,95 @@ function convertRequestDeviceErrorWasiToWeb(err: gfx.RequestDeviceError): TypeEr
     }
 }
 
+function convertCreatePipelineErrorWasiToWeb(err: gfx.CreatePipelineError): GPUPipelineError {
+    const kind = err.kind;
+    switch (kind.tag) {
+        case "gpu-pipeline-error":
+            return new GPUPipelineError(err.message, { reason: kind.val });
+        default:
+            kind.tag satisfies never;
+            throw new Unreachable;
+    }
+}
+
+function convertComputePipelineDescriptorWebToWasi(descriptor: GPUComputePipelineDescriptor): gfx.GpuComputePipelineDescriptor {
+    return {
+        ...descriptor,
+        layout: convertGpuLayoutWebToWasi(descriptor.layout),
+        compute: {
+            module: (descriptor.compute.module as GPUShaderModule)[inner],
+            entryPoint: descriptor.compute.entryPoint,
+            constants: convertConstantsWebToWasi(descriptor.compute.constants),
+        },
+    };
+}
+
+function convertRenderPipelineDescriptorWebToWasi(descriptor: GPURenderPipelineDescriptor): gfx.GpuRenderPipelineDescriptor {
+    let buffers: (gfx.GpuVertexBufferLayout | undefined)[] | undefined = undefined;
+    if (descriptor.vertex.buffers) {
+        buffers = Array.from(descriptor.vertex.buffers).map(vbl => {
+            if (vbl) {
+                return {
+                    ...vbl,
+                    arrayStride: numToBigInt(vbl.arrayStride),
+                    attributes: Array.from(vbl.attributes).map(attribute => {
+                        return {
+                            ...attribute,
+                            offset: numToBigInt(attribute.offset),
+                            format: convertVertexFormatWebToWasi(attribute.format),
+                        }
+                    }),
+                }
+            } else {
+                return undefined;
+            }
+        });
+    }
+    const vertex: gfx.GpuVertexState = {
+        ...descriptor.vertex,
+        constants: convertConstantsWebToWasi(descriptor.vertex.constants),
+        module: (descriptor.vertex.module as GPUShaderModule)[inner],
+        buffers,
+    };
+    let depthStencil: gfx.GpuDepthStencilState | undefined;
+    if (descriptor.depthStencil) {
+        depthStencil = {
+            ...descriptor.depthStencil,
+            format: convertTextureFormatWebToWasi(descriptor.depthStencil.format),
+        }
+    }
+    let fragment: gfx.GpuFragmentState | undefined;
+    if (descriptor.fragment) {
+        fragment = {
+            ...descriptor.fragment,
+            constants: convertConstantsWebToWasi(descriptor.fragment.constants),
+            module: (descriptor.fragment.module as GPUShaderModule)[inner],
+            targets: Array.from(descriptor.fragment.targets).map(target => {
+                if (target) {
+                    let writeMask: gfx.GpuColorWrite | undefined;
+                    if (target.writeMask !== undefined)
+                        writeMask = convertColorWriteWebToWasi(target.writeMask);
+                    return {
+                        ...target,
+                        format: convertTextureFormatWebToWasi(target.format),
+                        writeMask,
+                    };
+                } else {
+                    return undefined;
+                }
+            }),
+        }
+    }
+
+    return {
+        ...descriptor,
+        vertex,
+        depthStencil,
+        fragment,
+        layout: convertGpuLayoutWebToWasi(descriptor.layout),
+    };
+}
+
 function convertBufferToUint8Array(buffer: ArrayBufferView | ArrayBuffer | SharedArrayBuffer): Uint8Array {
     if (buffer instanceof Uint8Array) {
         return buffer;
@@ -1054,99 +1143,35 @@ export class GPUDevice extends EventTarget implements globalThis.GPUDevice {
     }
 
     createComputePipeline(descriptor: GPUComputePipelineDescriptor) {
-        let compute: gfx.GpuProgrammableStage = {
-            module: (descriptor.compute.module as GPUShaderModule)[inner],
-            entryPoint: descriptor.compute.entryPoint,
-            constants: convertConstantsWebToWasi(descriptor.compute.constants),
-        };
-
-        return new GPUComputePipeline(key, this[inner].createComputePipeline({
-            ...descriptor,
-            compute,
-            layout: convertGpuLayoutWebToWasi(descriptor.layout),
-        }));
+        return new GPUComputePipeline(key, this[inner].createComputePipeline(convertComputePipelineDescriptorWebToWasi(descriptor)));
     }
 
     createRenderPipeline(descriptor: GPURenderPipelineDescriptor): GPURenderPipeline {
-        let buffers: (gfx.GpuVertexBufferLayout | undefined)[] | undefined = undefined;
-        if (descriptor.vertex.buffers) {
-            buffers = Array.from(descriptor.vertex.buffers).map(vbl => {
-                if (vbl) {
-                    return {
-                        ...vbl,
-                        arrayStride: numToBigInt(vbl.arrayStride),
-                        attributes: Array.from(vbl.attributes).map(attribute => {
-                            return {
-                                ...attribute,
-                                offset: numToBigInt(attribute.offset),
-                                format: convertVertexFormatWebToWasi(attribute.format),
-                            }
-                        }),
-                    }
-                } else {
-                    return undefined;
-                }
-            });
-        }
-        const vertex: gfx.GpuVertexState = {
-            ...descriptor.vertex,
-            constants: convertConstantsWebToWasi(descriptor.vertex.constants),
-            module: (descriptor.vertex.module as GPUShaderModule)[inner],
-            buffers,
-        };
-        let depthStencil: gfx.GpuDepthStencilState | undefined;
-        if (descriptor.depthStencil) {
-            depthStencil = {
-                ...descriptor.depthStencil,
-                format: convertTextureFormatWebToWasi(descriptor.depthStencil.format),
-            }
-        }
-        let fragment: gfx.GpuFragmentState | undefined;
-        if (descriptor.fragment) {
-            fragment = {
-                ...descriptor.fragment,
-                constants: convertConstantsWebToWasi(descriptor.fragment.constants),
-                module: (descriptor.fragment.module as GPUShaderModule)[inner],
-                targets: Array.from(descriptor.fragment.targets).map(target => {
-                    if (target) {
-                        let writeMask: gfx.GpuColorWrite | undefined;
-                        if (target.writeMask !== undefined)
-                            writeMask = convertColorWriteWebToWasi(target.writeMask);
-                        return {
-                            ...target,
-                            format: convertTextureFormatWebToWasi(target.format),
-                            writeMask,
-                        };
-                    } else {
-                        return undefined;
-                    }
-                }),
-            }
-        }
-
-        return new GPURenderPipeline(key, this[inner].createRenderPipeline({
-            ...descriptor,
-            vertex,
-            depthStencil,
-            fragment,
-            layout: convertGpuLayoutWebToWasi(descriptor.layout),
-        }));
+        return new GPURenderPipeline(key, this[inner].createRenderPipeline(convertRenderPipelineDescriptorWebToWasi(descriptor)));
     }
 
     async createComputePipelineAsync(descriptor: GPUComputePipelineDescriptor): Promise<GPUComputePipeline> {
-        // TODO: make this really async
-        await Promise.resolve();
-        const result = this.createComputePipeline(descriptor);
-        await Promise.resolve();
-        return result;
+        const gfxDescriptor = convertComputePipelineDescriptorWebToWasi(descriptor);
+        try {
+            const gfxPipeline = await this[inner].createComputePipelineAsync(gfxDescriptor);
+            return new GPUComputePipeline(key, gfxPipeline);
+        } catch (e) {
+            if (e instanceof Error && "payload" in e)
+                throw convertCreatePipelineErrorWasiToWeb((e as ComponentError<gfx.CreatePipelineError>).payload);
+            throw e;
+        }
     }
 
     async createRenderPipelineAsync(descriptor: GPURenderPipelineDescriptor): Promise<GPURenderPipeline> {
-        // TODO: make this really async
-        await Promise.resolve();
-        const result = this.createRenderPipeline(descriptor);
-        await Promise.resolve();
-        return result;
+        const gfxDescriptor = convertRenderPipelineDescriptorWebToWasi(descriptor);
+        try {
+            const gfxPipeline = await this[inner].createRenderPipelineAsync(gfxDescriptor);
+            return new GPURenderPipeline(key, gfxPipeline);
+        } catch (e) {
+            if (e instanceof Error && "payload" in e)
+                throw convertCreatePipelineErrorWasiToWeb((e as ComponentError<gfx.CreatePipelineError>).payload);
+            throw e;
+        }
     }
 
     createCommandEncoder(descriptor: GPUCommandEncoderDescriptor = {}): GPUCommandEncoder {
